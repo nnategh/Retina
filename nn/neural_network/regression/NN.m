@@ -1,10 +1,10 @@
 classdef NN < handle
-    %Neural Network
+    %NN implements a fully-connected feedword neural network.
     
     properties
-        x                               % input data, matrix of column vectors
-        y                               % ouput data, matrix of column vectors
-        layers                          % dimenstion of each layer except input layer
+        x                               % input data, matrix of column vectors : [x1, x2, ..., xN]
+        y                               % ouput data, matrix of column vectors : [y1, y2, ..., yN]
+        layers                          % dimenstion of each layer except input layer : [d1, d2, ..., dL]
          
         C                               % cost function
         C_                              % derivative of cost function
@@ -15,20 +15,23 @@ classdef NN < handle
         
         L                               % number of layers
         w                               % w{l}(j, k) weight between j'th neuron of l'th layer and k'th neuron of (l-1)'th layer
+        dw                              % dw{l}(j, k) is used in learning rule : w{l}(j, k) = w{l}(j, k) - learning_rage * dw{l}(j, k) 
         b                               % b{l}(j) bias of j'th neuron in l'th layer
-        z                               % z{l}(j) weighted sum of j'th neuron in l'th layer
-        a                               % a{l}(j) activation of j'th neuron in l'th layer
-        d                               % d{l}(j) error of j'th neuron in l'th layer
+        db                              % db{l}(j) is used in learning rule : b{l}(j) = b{l}(j) - learning_rage * db{l}(j)
+        z                               % z{l}(j) weighted sum of j'th neuron in l'th layer : z = w * a + b
+        a                               % a{l}(j) activation of j'th neuron in l'th layer : a = s(z)
+        d                               % d{l}(j) error of j'th neuron in l'th layer : d = diff(C, z)
         
-        number_of_epochs                %   
-        learning_rate                   %
-        total_cost                      %
+        number_of_epochs                % number of epoches
+        batch_size                      % batch size in stochastic gradient descent
+        learning_rate                   % learning rate in gradient descent
+        total_cost                      % total cost of learned network
         history                         % history for each epoch
         
-        divide_param                    %
-        data                            %
-        number_of_validations_faild     %
-        index_min_cost_validation       %
+        divide_param                    % structure of {training ratio, validation ratio, test ratio}
+        data                            % structure of {training, validation, test} data 
+        number_of_validations_faild     % number of validation can be failed before termination learing
+        index_min_cost_validation       % index of epoch that the network has minimum cost on validation data
     end
     
     methods
@@ -47,6 +50,7 @@ classdef NN < handle
             obj.L = length(obj.layers);
             
             obj.number_of_epochs = 100;
+            obj.batch_size = 1;
             obj.learning_rate = 0.01;
             obj.history = [];
             
@@ -66,10 +70,24 @@ classdef NN < handle
             end
         end
         
+        function init_dw(obj)
+            obj.dw = cell(size(obj.w));
+            for l = 1:length(obj.dw)
+                obj.dw{l} = zeros(size(obj.w{l}));
+            end
+        end
+        
         function init_b(obj)
             obj.b = cell(obj.L, 1);
             for l = 1:obj.L
                 obj.b{l} = zeros(obj.layers(l), 1);
+            end
+        end
+        
+        function init_db(obj)
+            obj.db = cell(size(obj.b));
+            for l = 1:length(obj.db)
+                obj.db{l} = zeros(size(obj.b{l}));
             end
         end
         
@@ -93,14 +111,25 @@ classdef NN < handle
         function init(obj)
             % w
             obj.init_w();
+            % dw
+            obj.init_dw();
             % b
             obj.init_b();
+            % db
+            obj.init_db();
             % z
             obj.z = cell(obj.L, 1);
             % a
             obj.a = cell(obj.L, 1);
             % d
             obj.d = cell(obj.L, 1);
+            % batch_size
+            if obj.batch_size < 1
+                obj.batch_size = 1;
+            end
+            if obj.batch_size > size(obj.x, 2)
+                obj.batch_size = size(obj.x, 2);
+            end
             
             % divide data
             obj.divide_data();
@@ -133,23 +162,40 @@ classdef NN < handle
             end
         end
         
-        function update_step(obj, x)
-            % w
+        function update_dw_db(obj, x)
+            % dw
             % --first layer
-            obj.w{1} = obj.w{1} - ...
-                (obj.learning_rate * (obj.d{1} * x'));
+            obj.dw{1} = obj.dw{1} + (obj.d{1} * x');
             
             % --
             for l = 2:obj.L
-                obj.w{l} = obj.w{l} - ...
-                    (obj.learning_rate * (obj.d{l} * obj.a{l-1}'));
+                obj.dw{l} = obj.dw{l} + (obj.d{l} * obj.a{l-1}');
             end
+            
+            % db
+            for l = 1:obj.L
+                obj.db{l} = obj.db{l} + obj.d{l};
+            end
+        end
+        
+        function update_step(obj)
+            % w
+            for l = 1:obj.L
+                obj.w{l} = obj.w{l} - ...
+                    (obj.learning_rate * (1 / obj.batch_size) * obj.dw{l});
+            end
+            
+            % init dw
+            obj.init_dw()
             
             % b
             for l = 1:obj.L
                 obj.b{l} = obj.b{l} - ...
-                    (obj.learning_rate * obj.d{l});
+                    (obj.learning_rate * (1 / obj.batch_size) * obj.db{l});
             end
+            
+            % init db
+            obj.init_db()
         end
         
         function y = out(obj, x)
@@ -400,12 +446,25 @@ classdef NN < handle
             
             obj.index_min_cost_validation = 1;
             n = size(obj.data.train.x, 2);
+            batch_index = 0;
             for epoch = 2:(obj.number_of_epochs + 1)
                 % forward, backward, update
+                permuted_indexes = randperm(n);
                 for i = 1:n
-                    obj.forward_step(obj.data.train.x(:, i));
-                    obj.backward_step(obj.data.train.y(:, i));
-                    obj.update_step(obj.data.train.x(:, i));
+                    index = permuted_indexes(i);
+                    obj.forward_step(obj.data.train.x(:, index));
+                    obj.backward_step(obj.data.train.y(:, index));
+                    obj.update_dw_db(obj.data.train.x(:, index));
+                    
+                    batch_index = batch_index + 1;
+                    if batch_index >= obj.batch_size
+                        obj.update_step();
+                        batch_index = 0;
+                    end
+                end
+                if batch_index > 0
+                    obj.update_step();
+                    batch_index = 0;
                 end
                 % history
                 obj.history(epoch).total_cost = obj.get_total_cost();
