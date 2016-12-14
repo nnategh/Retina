@@ -595,6 +595,7 @@ classdef CNN < handle
             obj.index_min_cost_validation = 1;
             n = length(obj.data.train.x);
             batch_index = 0;
+%             progress_message = '';
             for epoch = 2:(obj.number_of_epochs + 1)
                 % forward, backward, update
                 permuted_indexes = randperm(n);
@@ -627,7 +628,13 @@ classdef CNN < handle
                 if (epoch - obj.index_min_cost_validation) >= obj.number_of_validations_faild
                     break;
                 end
+                
+%                 % print epoch number
+%                 fprintf(repmat('\b', 1, length(progress_message)));
+%                 progress_message = sprintf('Epoch: %d', epoch - 1);
+%                 fprintf(progress_message);
             end
+%             fprintf('\n');
             
             % best validation performance
             obj.w = obj.history(obj.index_min_cost_validation).w;
