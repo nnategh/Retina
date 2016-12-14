@@ -1,5 +1,5 @@
 classdef CNN < handle
-    %Convolutional Neural Network
+    %CNN implements a Convolutional Neural Network
     
     properties
         % independant
@@ -16,7 +16,8 @@ classdef CNN < handle
         resize_method                   % 'crop', 'nearset', 'bilinear' and 'bicubic'
         
         number_of_epochs                % number of epochs
-        learning_rate                   % learning rate
+        batch_size                      % batch size in stochastic gradient descent
+        learning_rate                   % learning rate in gradient descent
         number_of_validations_faild     % termination condition in the rule 'no improvement after number_of_validations_faild epochs'
         
         C                               % cost function
@@ -30,10 +31,12 @@ classdef CNN < handle
         layers                          % dimenstion of each layer except input layer. 2d matrix, columns (height, width, depth)
         
         w                               % w{l} kernel of l'th layer (3d matrix := 2d spatial + 1d time)
-        b                               % b{l}(i, j) bias of neuron_{i, j} in l'th layer
-        z                               % z{l}(i, j) net input of neuron_{i, j} in l'th layer
-        a                               % a{l}(i, j) activation of neuron_{i, j} in l'th layer
-        d                               % d{l}(i, j) error of neuron_{i, j} in l'th layer
+        dw                              % dw{l} is used in learning rule : w{l} = w{l} - learning_rage * dw{l}
+        b                               % b{l} bias of l'th layer
+        db                              % db{l} is used in learning rule : b{l} = b{l} - learning_rage * db{l}
+        z                               % z{l} net input of l'th layer
+        a                               % a{l} activation of l'th layer
+        d                               % d{l} error of l'th layer
         
         data                            % structure of 'train', 'validation' and 'test'
         history                         % history for each epoch
@@ -57,7 +60,8 @@ classdef CNN < handle
             obj.resize_method = 'crop';
 
             obj.number_of_epochs = 100;
-            obj.learning_rate = 0.01;
+            obj.batch_size = 1;
+            obj.learning_rate = 0.001;
             obj.number_of_validations_faild = 6;
             
             obj.C = @CNN.quadratic_cost_function;
@@ -67,7 +71,7 @@ classdef CNN < handle
         end
         
         function init_input_size(obj)
-           obj.input_size = obj.output_size + sum(obj.kernel_sizes - 1);
+           obj.input_size = obj.output_size + sum(obj.kernel_sizes - 1, 1);
         end
         
         function init_layers(obj)
@@ -183,13 +187,20 @@ classdef CNN < handle
             
             if isempty(obj.kernel_paths)
                 for l = 1:obj.L
-                    obj.w{l} = randn(obj.kernel_sizes(l, :));
+                    obj.w{l} = rand(obj.kernel_sizes(l, :));
                 end
             else
                 for l = 1:obj.L
                     kd = KernelDesigner.load(obj.kernel_paths{l});
                     obj.w{l} = kd.get_kernel(obj.kernel_sizes(l, :), obj.space_value_limits(l, :), obj.time_value_limits(l, :));
                 end
+            end
+        end
+        
+        function init_dw(obj)
+            obj.dw = cell(size(obj.w));
+            for l = 1:length(obj.dw)
+                obj.dw{l} = zeros(size(obj.w{l}));
             end
         end
         
@@ -202,7 +213,21 @@ classdef CNN < handle
         function init_b(obj)
             obj.b = cell(obj.L, 1);
             for l = 1:obj.L
-                obj.b{l} = zeros(obj.layers(l, :));
+                obj.b{l} = rand();
+            end
+        end
+        
+        function init_db(obj)
+            obj.db = cell(size(obj.b));
+            for l = 1:length(obj.db)
+                obj.db{l} = zeros(size(obj.b{l}));
+            end
+        end
+        
+        function add_noise_to_b(obj, sigma)
+            %ADD_NOISE_TO_B add gaussian noise ~ G(0, sigma) to biases
+            for l = 1:obj.L
+                obj.b{l} = obj.b{l} + sigma * randn(size(obj.b{l}));
             end
         end
         
@@ -252,9 +277,17 @@ classdef CNN < handle
             if isempty(obj.w)
                 obj.init_w();
             end
+            % dw
+            if isempty(obj.dw)
+                obj.init_dw();
+            end
             % b
             if isempty(obj.b)
                 obj.init_b();
+            end
+            % db
+            if isempty(obj.db)
+                obj.init_db();
             end
             % z
             if isempty(obj.z)
@@ -267,6 +300,14 @@ classdef CNN < handle
             % d
             if isempty(obj.d)
                 obj.d = cell(obj.L, 1);
+            end
+            
+            % batch_size
+            if obj.batch_size < 1
+                obj.batch_size = 1;
+            end
+            if obj.batch_size > length(obj.x)
+                obj.batch_size = length(obj.x);
             end
             
             % data
@@ -306,28 +347,45 @@ classdef CNN < handle
             % --
             for l = (obj.L - 1):-1:1
                 obj.d{l} = ...
-                    convn(obj.d{l+1}, flip(flip(flip(obj.w{l+1}, 1), 2), 3), 'full') ...
+                    convn(obj.d{l+1}, CNN.flipn(obj.w{l+1}), 'full') ...
                     .* obj.s_(obj.z{l});
             end
         end
         
-        function update_step(obj, x)
-            % w
+        function update_dw_db(obj, x)
+            % dw
             % --first layer
-            obj.w{1} = obj.w{1} - ...
-                (obj.learning_rate * convn(flip(flip(flip(x, 1), 2), 3), obj.d{1}, 'valid'));
+            obj.dw{1} = obj.dw{1} + convn(CNN.flipn(x), obj.d{1}, 'valid');
             
             % --
             for l = 2:obj.L
-                obj.w{l} = obj.w{l} - ...
-                    (obj.learning_rate * convn(flip(flip(flip(obj.a{l-1}, 1), 2), 3), obj.d{l}, 'valid'));
+                obj.dw{l} = obj.dw{l} + convn(CNN.flipn(obj.a{l-1}), obj.d{l}, 'valid');
             end
             
             % b
             for l = 1:obj.L
-                obj.b{l} = obj.b{l} - ...
-                    (obj.learning_rate * obj.d{l});
+                obj.db{l} = obj.db{l} + sum(obj.d{l}(:));
             end
+        end
+        
+        function update_step(obj)
+            % w
+            for l = 1:obj.L
+                obj.w{l} = obj.w{l} - ...
+                    (obj.learning_rate * (1 / obj.batch_size) * obj.dw{l});
+            end
+            
+            % init dw
+            obj.init_dw()
+            
+            % b
+            for l = 1:obj.L
+                obj.b{l} = obj.b{l} - ...
+                    (obj.learning_rate * (1 / obj.batch_size) * obj.db{l});
+            end
+            
+            % init db
+            obj.init_db()
         end
         
         function y = out(obj, x)
@@ -489,6 +547,7 @@ classdef CNN < handle
             legend('Training', 'Validation', 'Test', 'Zero Error');
         end
         
+        
         function total_cost = get_total_cost(obj)
             total_cost = [];
             
@@ -535,12 +594,25 @@ classdef CNN < handle
             
             obj.index_min_cost_validation = 1;
             n = length(obj.data.train.x);
+            batch_index = 0;
             for epoch = 2:(obj.number_of_epochs + 1)
                 % forward, backward, update
+                permuted_indexes = randperm(n);
                 for i = 1:n
-                    obj.forward_step(obj.data.train.x{i});
-                    obj.backward_step(obj.data.train.y{i});
-                    obj.update_step(obj.data.train.x{i});
+                    index = permuted_indexes(i);
+                    obj.forward_step(obj.data.train.x{index});
+                    obj.backward_step(obj.data.train.y{index});
+                    obj.update_dw_db(obj.data.train.x{index});
+                    
+                    batch_index = batch_index + 1;
+                    if batch_index >= obj.batch_size
+                        obj.update_step();
+                        batch_index = 0;
+                    end
+                end
+                if batch_index > 0
+                    obj.update_step();
+                    batch_index = 0;
                 end
                 % history
                 obj.history(epoch).total_cost = obj.get_total_cost();
@@ -641,14 +713,14 @@ classdef CNN < handle
             files = dir([folder_path, '/*.', filename_extension]);
             
             % init v
-            I = imread(fullfile(files(1).folder, files(1).name));
+            I = imread(fullfile(folder_path, files(1).name));
             [m, n] = size(I);
             p = length(files);
             v = zeros(m, n, p);
             
             % make v
             for i = 1:p
-                I = imread(fullfile(files(i).folder, files(i).name));
+                I = imread(fullfile(folder_path, files(i).name));
                 I = double(I);
                 I = I / max(I(:));
 
@@ -853,6 +925,13 @@ classdef CNN < handle
                         x(i, j, :) = x(i, j, :) / max_;
                     end
                 end
+            end
+        end
+        
+        function matrix = flipn(matrix)
+            %FLIPN flip on all dimensions
+            for dim = 1:ndims(matrix)
+                matrix = flip(matrix, dim);
             end
         end
     end
