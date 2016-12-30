@@ -1,0 +1,169 @@
+{
+    "input": {
+        "name": "x",
+        "size": [
+            5,
+            5,
+            5
+        ]
+    },
+    "output": {
+        "name": "a_G",
+        "size": [
+            5,
+            5,
+            5
+        ]
+    },
+    "params": [
+        {
+            "name": "w_B",
+            "size": [
+                5,
+                5,
+                5
+            ]
+        },
+        {
+            "name": "b_B",
+            "size": [
+                1
+            ]
+        },
+        {
+            "name": "w_A",
+            "size": [
+                5,
+                5,
+                5
+            ]
+        },
+        {
+            "name": "b_A",
+            "size": [
+                1
+            ]
+        },
+        {
+            "name": "w_G",
+            "size": [
+                5,
+                5,
+                5
+            ]
+        },
+        {
+            "name": "b_G",
+            "size": [
+                1
+            ]
+        }
+    ],
+    "layers": [
+        {
+            "name": "conv_B",
+            "type": "conv",
+            "opts": null,
+            "inputs": [
+                "x"
+            ],
+            "outputs": [
+                "z_B"
+            ],
+            "params": [
+                "w_B",
+                "b_B"
+            ]
+        },
+        {
+            "name": "relu_B",
+            "type": "relu",
+            "opts": null,
+            "inputs": [
+                "z_B"
+            ],
+            "outputs": [
+                "a_B"
+            ],
+            "params": null
+        },
+        {
+            "name": "conv_A",
+            "type": "conv",
+            "opts": null,
+            "inputs": [
+                "a_B"
+            ],
+            "outputs": [
+                "z_A"
+            ],
+            "params": [
+                "w_A",
+                "b_A"
+            ]
+        },
+        {
+            "name": "relu_A",
+            "type": "relu",
+            "opts": {},
+            "inputs": [
+                "z_B"
+            ],
+            "outputs": [
+                "a_A"
+            ],
+            "params": null
+        },
+        {
+            "name": "conv_G",
+            "type": "conv",
+            "opts": null,
+            "inputs": [
+                "a_A"
+            ],
+            "outputs": [
+                "z_G"
+            ],
+            "params": [
+                "w_G",
+                "b_G"
+            ]
+        },
+        {
+            "name": "cost",
+            "type": "quadcost",
+            "opts": null,
+            "inputs": [
+                "a_G",
+                "y"
+            ],
+            "outputs": [
+                "c"
+            ],
+            "params": null
+        },
+        {
+            "name": "relu_G",
+            "type": "relu",
+            "opts": {},
+            "inputs": [
+                "z_G"
+            ],
+            "outputs": [
+                "a_G"
+            ],
+            "params": null
+        }
+    ],
+    "train_val_test_ratios": [
+        0.70,
+        0.15,
+        0.15
+    ],
+    "number_of_samples": 100,
+    "learning_rate": 0.001,
+    "batch_size": 10,
+    "epochs": 50,
+    "number_of_val_fails": 6,
+    "device": "cpu"
+}

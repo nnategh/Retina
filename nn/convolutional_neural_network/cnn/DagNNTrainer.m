@@ -1,87 +1,116 @@
-classdef CNN < handle
-    %CNN implements a Convolutional Neural Network
+classdef DagNNTrainer < handle
+    %DAGNNTRAINER implements a trainer for DagNN
     
     properties
         % independant
-        x                               % x{i} input data 3d matrix (2d spatial + 1d time)
-        y                               % y{i} ouput data, 3d matrix (2d spatial + 1d time)
-        divide_param                    % structure of 'training ratio', 'validation ratio' and 'test ratio'
+        x                               % cell array of input data.
+        y                               % cell array of output data.
         
-        kernel_sizes                    % dimenstion of kernel of each layer. 2d matrix, columns (height, width, depth)
-        kernel_paths                    % e.x. {'bipolar', 'ganglion'}
         space_value_limits              % for kernel designer. 2d matrix, columns (ymin, ymax)
         time_value_limits               % for kernel designer. 2d matrix, columns (ymin, ymax)
         
-        output_size                     % [height, width, depth] of output layer
         resize_method                   % 'crop', 'nearset', 'bilinear' and 'bicubic'
         
-        number_of_epochs                % number of epochs
-        batch_size                      % batch size in stochastic gradient descent
-        learning_rate                   % learning rate in gradient descent
-        number_of_validations_faild     % termination condition in the rule 'no improvement after number_of_validations_faild epochs'
-        
-        C                               % cost function
-        C_                              % derivative of cost function
-        s                               % activation function
-        s_                              % derivative of activation function
-        
         % dependant
-        L                               % number of layers
-        input_size                      % size of input layer := [height, width, depth]
-        layers                          % dimenstion of each layer except input layer. 2d matrix, columns (height, width, depth)
-        
-        w                               % w{l} kernel of l'th layer (3d matrix := 2d spatial + 1d time)
-        dw                              % dw{l} is used in learning rule : w{l} = w{l} - learning_rage * dw{l}
-        b                               % b{l} bias of l'th layer
-        db                              % db{l} is used in learning rule : b{l} = b{l} - learning_rage * db{l}
-        z                               % z{l} net input of l'th layer
-        a                               % a{l} activation of l'th layer
-        d                               % d{l} error of l'th layer
-        
         data                            % structure of 'train', 'validation' and 'test'
-        history                         % history for each epoch
-        index_min_cost_validation       % epoch number that network has minimum cost on validation data
+        train_costs                     % train cost for each epoch
+        val_costs                       % val cost for each epoch
+        test_costs                      % test cost for each epoch
+        index_min_val_cost              % epoch number that network has minimum cost on validation data
         
+        props                           % properties of cnn
+        net                             % DagNN
     end
     
     methods
-        function obj = CNN()
-            obj.x = [];
-            obj.y = [];
-            obj.divide_param.train_ratio = 70/100;
-            obj.divide_param.validation_ratio = 15/100;
-            obj.divide_param.test_ratio = 15/100;
+        function obj = DagNNTrainer(filename)
+            % props
+            obj.init_props(filename);
             
-            obj.kernel_sizes = [];
-            obj.kernel_paths = [];
-            obj.space_value_limits = [];
-            obj.time_value_limits = [];
-            obj.output_size = [];
+            % resize method
             obj.resize_method = 'crop';
-
-            obj.number_of_epochs = 100;
-            obj.batch_size = 1;
-            obj.learning_rate = 0.001;
-            obj.number_of_validations_faild = 6;
+        end
+        
+        function init_props(obj, filename)
+            % decode json
+            obj.props = jsondecode(fileread(filename));
             
-            obj.C = @CNN.quadratic_cost_function;
-            obj.C_ = @CNN.diff_quadratic_cost_function;
-            obj.s = @CNN.rectifier_activation_function;
-            obj.s_ = @CNN.diff_rectifier_activation_function;
+            % refine
+            % - input
+            obj.props.input.size = obj.props.input.size';
+            
+            % - output
+            obj.props.output.size = obj.props.output.size';
+            
+            % - params
+            for i = 1:length(obj.props.params)
+                obj.props.params(i).size = obj.props.params(i).size';
+            end
+            
+            % - layers
+            for i = 1:length(obj.props.layers)
+                % inputs
+                if isempty(obj.props.layers(i).inputs)
+                    obj.props.layers(i).inputs = {};
+                else
+                    obj.props.layers(i).inputs = obj.props.layers(i).inputs';
+                end
+                % outputs
+                if isempty(obj.props.layers(i).outputs)
+                    obj.props.layers(i).outputs = {};
+                else
+                    obj.props.layers(i).outputs = obj.props.layers(i).outputs';
+                end
+                
+                % params
+                if isempty(obj.props.layers(i).params)
+                    obj.props.layers(i).params = {};
+                else
+                    obj.props.layers(i).params = obj.props.layers(i).params';
+                end
+            end
         end
         
+        function init_net(obj)
+            % blocks
+            blocks = struct(...
+                'conv', @dagnn.Conv, ...
+                'relu', @dagnn.ReLU, ...
+                'quadcost', @dagnn.QuadraticCost ...
+            );
+            
+            % define object
+            obj.net = dagnn.DagNN();
+            
+            % add layers
+            layers = obj.props.layers;
+            for i = 1:length(layers)
+                obj.net.addLayer(...
+                    layers(i).name, blocks.(layers(i).type)(), ...
+                    layers(i).inputs, ...
+                    layers(i).outputs, ...
+                    layers(i).params ...
+                );
+            end
+        end
+        
+        function init_params(obj, generator)
+            % defualt generator
+            if nargin < 2
+                generator = @rand;
+            end
+            
+            % initialize obj.net.params
+            params = obj.props.params;
+            for i = 1:length(params)
+                obj.net.params(obj.net.getParamIndex(params(i).name)).value = ...
+                    generator(params(i).size);
+            end
+        end
+        
+        % todo: complete the method
         function init_input_size(obj)
-           obj.input_size = obj.output_size + sum(obj.kernel_sizes - 1, 1);
-        end
-        
-        function init_layers(obj)
-            obj.layers = zeros(obj.L, 3);
-            % first layer
-            obj.layers(1, :) = obj.input_size - obj.kernel_sizes(1, :) + 1;
-            % other layers
-            for l = 2:obj.L
-                obj.layers(l, :) = obj.layers(l-1, :) - obj.kernel_sizes(l, :) + 1;
-            end 
+           return
         end
         
         % todo: refactor resize_input, resize_x and resize_y
@@ -118,6 +147,7 @@ classdef CNN < handle
             end
         end
         
+        % todo
         function resize_x(obj)
             do_crop = strcmp(obj.resize_method, 'crop');
             m = obj.input_size(1);
@@ -150,6 +180,7 @@ classdef CNN < handle
             end
         end
         
+        % todo
         function resize_y(obj)
             do_crop = strcmp(obj.resize_method, 'crop');
             m = obj.output_size(1);
@@ -182,218 +213,90 @@ classdef CNN < handle
             end
         end
         
-        function init_w(obj)
-            obj.w = cell(obj.L, 1);
-            
-            if isempty(obj.kernel_paths)
-                for l = 1:obj.L
-                    obj.w{l} = rand(obj.kernel_sizes(l, :));
-                end
-            else
-                for l = 1:obj.L
-                    kd = KernelDesigner.load(obj.kernel_paths{l});
-                    obj.w{l} = kd.get_kernel(obj.kernel_sizes(l, :), obj.space_value_limits(l, :), obj.time_value_limits(l, :));
-                end
-            end
-        end
-        
-        function init_dw(obj)
-            obj.dw = cell(size(obj.w));
-            for l = 1:length(obj.dw)
-                obj.dw{l} = zeros(size(obj.w{l}));
-            end
-        end
-        
+        % todo
         function add_noise_to_w(obj, sigma)
             for l = 1:obj.L
                 obj.w{l} = obj.w{l} + sigma * randn(size(obj.w{l}));
             end
         end
         
-        function init_b(obj)
-            obj.b = cell(obj.L, 1);
-            for l = 1:obj.L
-                obj.b{l} = rand();
-            end
-        end
-        
-        function init_db(obj)
-            obj.db = cell(size(obj.b));
-            for l = 1:length(obj.db)
-                obj.db{l} = zeros(size(obj.b{l}));
-            end
-        end
-        
-        function add_noise_to_b(obj, sigma)
-            %ADD_NOISE_TO_B add gaussian noise ~ G(0, sigma) to biases
-            for l = 1:obj.L
-                obj.b{l} = obj.b{l} + sigma * randn(size(obj.b{l}));
-            end
-        end
-        
         function divide_data(obj)
-            n = length(obj.x);
+            size_input = obj.props.input.size;
+            size_output = obj.props.output.size;
+            if size_input(end) ~= size_output(end)
+                error('Number of inputs and outputs are not the same.');
+            end
+            
+            n = size_input(end);
+            train_ratio = obj.props.train_val_test_ratios(1);
+            val_ratio = obj.props.train_val_test_ratios(2);
+            
             indexes = randperm(n);
-            train_index = floor(obj.divide_param.train_ratio * n);
-            validation_index = floor((obj.divide_param.train_ratio + obj.divide_param.validation_ratio) * n);
+            train_index = floor(train_ratio * n);
+            val_index = floor((train_ratio + val_ratio) * n);
             test_index = n;
             
             obj.data.train.x = obj.x(indexes(1:train_index));
             obj.data.train.y = obj.y(indexes(1:train_index));
             
-            obj.data.validation.x = obj.x(indexes(train_index + 1:validation_index));
-            obj.data.validation.y = obj.y(indexes(train_index + 1:validation_index));
+            obj.data.val.x = obj.x(indexes(train_index + 1:val_index));
+            obj.data.val.y = obj.y(indexes(train_index + 1:val_index));
             
-            obj.data.test.x = obj.x(indexes(validation_index + 1:test_index));
-            obj.data.test.y = obj.y(indexes(validation_index + 1:test_index));
+            obj.data.test.x = obj.x(indexes(val_index + 1:test_index));
+            obj.data.test.y = obj.y(indexes(val_index + 1:test_index));
         end
         
-        function make_data(obj, N)
-    obj.x = cell(N, 1);
-    for i = 1:N
-        obj.x{i} = rand(obj.input_size);
-    end
-    obj.y = obj.out(obj.x);
+        function make_data(obj, generator)
+            % default generator
+            if nargin < 2
+                generator = @rand;
+            end
+            
+            % inputs
+            N = obj.props.number_of_samples;
+            obj.x = cell(N, 1);
+            for i = 1:N
+                obj.x{i} = generator(obj.props.input.size);
+            end
+            
+            % outputs
+            obj.y = obj.out(obj.x);
         end
         
         function init(obj)
-            % L
-            obj.L = size(obj.kernel_sizes, 1);
-            % input size
-            obj.init_input_size();
-            % layers
-            obj.init_layers();
+            % net
+            obj.init_net();
             
-            % resize x
-            if ~isempty(obj.x)
-                obj.resize_x();
-            end
-            % resize y
-            if ~isempty(obj.y)
-                obj.resize_y();
-            end
-            
-            % w
-            if isempty(obj.w)
-                obj.init_w();
-            end
-            % dw
-            if isempty(obj.dw)
-                obj.init_dw();
-            end
-            % b
-            if isempty(obj.b)
-                obj.init_b();
-            end
-            % db
-            if isempty(obj.db)
-                obj.init_db();
-            end
-            % z
-            if isempty(obj.z)
-                obj.z = cell(obj.L, 1);
-            end
-            % a
-            if isempty(obj.a)
-                obj.a = cell(obj.L, 1);
-            end
-            % d
-            if isempty(obj.d)
-                obj.d = cell(obj.L, 1);
-            end
-            
-            % batch_size
-            if obj.batch_size < 1
-                obj.batch_size = 1;
-            end
-            if obj.batch_size > length(obj.x)
-                obj.batch_size = length(obj.x);
-            end
+            % params
+            obj.init_params();
             
             % data
-            if ~isempty(obj.x) && ~isempty(obj.y)
-                obj.divide_data();
-            end
+            obj.divide_data();
             
-            % history
-            obj.history = [];
+            % train costs
+            obj.train_costs(1) = obj.get_train_cost();
+
+            % val costs
+            obj.val_costs(1) = obj.get_val_cost();
+            
+            % test costs
+            obj.test_costs(1) = obj.get_test_cost();
             
             % index_min_cost_validation
-            obj.index_min_cost_validation = [];
-        end
-        
-        function forward_step(obj, x)
-            x = CNN.normalize(x);
-            % z, a
-            % --first layer
-            obj.z{1} = convn(x, obj.w{1}, 'valid') + obj.b{1};
-            obj.z{1} = CNN.normalize(obj.z{1});
-            obj.a{1} = obj.s(obj.z{1});
-%             obj.a{1} = CNN.normalize(obj.a{1});
-
-            % --
-            for l = 2:obj.L
-                obj.z{l} = convn(obj.a{l - 1}, obj.w{l}, 'valid') + obj.b{l};
-                obj.z{l} = CNN.normalize(obj.z{l});
-                obj.a{l} = obj.s(obj.z{l});
-%                 obj.a{l} = CNN.normalize(obj.a{l});
-            end
-        end
-        
-        function backward_step(obj, y)
-            % d
-            % --last layer
-            obj.d{obj.L} = obj.C_(y, obj.a{obj.L}) .* obj.s_(obj.z{obj.L});
-            % --
-            for l = (obj.L - 1):-1:1
-                obj.d{l} = ...
-                    convn(obj.d{l+1}, CNN.flipn(obj.w{l+1}), 'full') ...
-                    .* obj.s_(obj.z{l});
-            end
-        end
-        
-        function update_dw_db(obj, x)
-            % dw
-            % --first layer
-            obj.dw{1} = obj.dw{1} + convn(CNN.flipn(x), obj.d{1}, 'valid');
-            
-            % --
-            for l = 2:obj.L
-                obj.dw{l} = obj.dw{l} + convn(CNN.flipn(obj.a{l-1}), obj.d{l}, 'valid');
-            end
-            
-            % b
-            for l = 1:obj.L
-                obj.db{l} = obj.db{l} + sum(obj.d{l}(:));
-            end
-        end
-        
-        function update_step(obj)
-            % w
-            for l = 1:obj.L
-                obj.w{l} = obj.w{l} - ...
-                    (obj.learning_rate * (1 / obj.batch_size) * obj.dw{l});
-            end
-            
-            % init dw
-            obj.init_dw()
-            
-            % b
-            for l = 1:obj.L
-                obj.b{l} = obj.b{l} - ...
-                    (obj.learning_rate * (1 / obj.batch_size) * obj.db{l});
-            end
-            
-            % init db
-            obj.init_db()
+            obj.index_min_val_cost = 1;
         end
         
         function y = out(obj, x)
             n = length(x);
             y = cell(n, 1);
             for i = 1:n
-                obj.forward_step(x{i});
-                y{i} = obj.a{obj.L};
+                obj.net.eval(...
+                    {obj.props.input.name, x{i}} ...
+                );
+
+                y{i} = obj.net.vars(...
+                    obj.net.getVarIndex(obj.props.output.name) ...
+                ).value;
             end
         end
         
@@ -547,85 +450,91 @@ classdef CNN < handle
             legend('Training', 'Validation', 'Test', 'Zero Error');
         end
         
+        function cost = get_cost(obj, x, y)
+            n = length(x);
+            for i = 1:n
+                obj.net.eval(...
+                    {...
+                        obj.props.input.name, x{i}, ...
+                        obj.props.output.name, y{i} ...
+                    } ...
+                );
+
+                cost = cost + obj.net.vars(...
+                    obj.net.getVarIndex('cost') ...
+                ).value;
+            end
+        end
         
-        function total_cost = get_total_cost(obj)
-            total_cost = [];
-            
-            % train
-            output = obj.out(obj.data.train.x);
-            error = 0;
-            n = length(output);
-            for i = 1:n
-                error = error + obj.C(obj.data.train.y{i}, output{i});
-            end
-            error = error / n;
-            total_cost(end + 1) = error;
-            
-            % validation
-            output = obj.out(obj.data.validation.x);
-            error = 0;
-            n = length(output);
-            for i = 1:n
-                error = error + obj.C(obj.data.validation.y{i}, output{i});
-            end
-            error = error / n;
-            total_cost(end + 1) = error;
-            
-            % test
-            output = obj.out(obj.data.test.x);
-            error = 0;
-            n = length(output);
-            for i = 1:n
-                error = error + obj.C(obj.data.test.y{i}, output{i});
-            end
-            error = error / n;
-            total_cost(end + 1) = error;
-            
-            total_cost = total_cost';
+        function train_cost = get_train_cost(obj)
+            train_cost = ...
+                obj.get_cost(obj.data.train.x, obj.data.train.y);
+        end
+        
+        function val_cost = get_val_cost(obj)
+            val_cost = ...
+                obj.get_cost(obj.data.val.x, obj.data.val.y);
+        end
+        
+        function test_cost = get_test_cost(obj)
+            test_cost = ...
+                obj.get_cost(obj.data.test.x, obj.data.test.y);
         end
         
         function run(obj)
+            % init net
             obj.init();
             
-            % 0 epoch
-            obj.history(1).total_cost = obj.get_total_cost();
-            obj.history(1).w = obj.w;
-            obj.history(1).b = obj.b;
-            
-            obj.index_min_cost_validation = 1;
             n = length(obj.data.train.x);
-            batch_index = 0;
-%             progress_message = '';
-            for epoch = 2:(obj.number_of_epochs + 1)
-                % forward, backward, update
+            batch_size = obj.props.batch_size - 1;
+            for epoch = 1:obj.props.number_of_epochs
+                % shuffle train data
                 permuted_indexes = randperm(n);
-                for i = 1:n
-                    index = permuted_indexes(i);
-                    obj.forward_step(obj.data.train.x{index});
-                    obj.backward_step(obj.data.train.y{index});
-                    obj.update_dw_db(obj.data.train.x{index});
-                    
-                    batch_index = batch_index + 1;
-                    if batch_index >= obj.batch_size
-                        obj.update_step();
-                        batch_index = 0;
+                for i = 1:batch_size:n
+                    indexes = permuted_indexes(i:i+batch_size);
+                    % make batch data
+                    input = ...
+                        DagNNTrainer.cell_array_to_tensor(...
+                            obj.data.train.x(indexes) ...
+                        );
+
+                    output = ...
+                        DagNNTrainer.cell_array_to_tensor(...
+                            obj.data.train.y(indexes) ...
+                        );
+
+                    % forwar, backward step
+                    obj.net.eval(...
+                        {...
+                            obj.props.input.name, input, ...
+                            obj.props.output.name, output
+                        }, ...
+                        {'cost', 1} ...
+                    );
+
+                    % update step
+                    for param_index = 1:length(obj.net.params)
+                        obj.net.params(param_index).value = ...
+                            obj.net.params(param_index).value - ...
+                            obj.props.learning_rate * obj.net.params(param_index).der;
                     end
+                    
                 end
-                if batch_index > 0
-                    obj.update_step();
-                    batch_index = 0;
-                end
-                % history
-                obj.history(epoch).total_cost = obj.get_total_cost();
-                obj.history(epoch).w = obj.w;
-                obj.history(epoch).b = obj.b;
+                % costs
+                % - train
+                obj.train_costs(end + 1) = obj.get_train_cost();
+                % - val
+                obj.val_costs(end + 1) = obj.get_val_cost();
+                % - test
+                obj.test_costs(end + 1) = obj.get_test_cost();
                 
-                % no imporovement in number_of_validations_faild steps
-                if obj.history(epoch).total_cost(2) < obj.history(obj.index_min_cost_validation).total_cost(2)
-                    obj.index_min_cost_validation = epoch;
+                % no imporovement in number_of_val_fails steps
+                if obj.val_costs(end) < obj.val_costs(obj.index_min_val_cost)
+                    obj.index_min_val_cost = length(obj.val_costs);
                 end
                 
-                if (epoch - obj.index_min_cost_validation) >= obj.number_of_validations_faild
+                if (length(obj.val_costs) - obj.index_min_val_cost) >= ...
+                        obj.props.number_of_val_fails
                     break;
                 end
                 
@@ -633,12 +542,23 @@ classdef CNN < handle
 %                 fprintf(repmat('\b', 1, length(progress_message)));
 %                 progress_message = sprintf('Epoch: %d', epoch - 1);
 %                 fprintf(progress_message);
+                obj.save_net(sprintf('./epoch_%d', epoch));
             end
 %             fprintf('\n');
             
-            % best validation performance
-            obj.w = obj.history(obj.index_min_cost_validation).w;
-            obj.b = obj.history(obj.index_min_cost_validation).b;
+            % todo: load best validation performance
+        end
+        
+        function save_net(obj, filename)
+            net_struct = obj.net.saveobj();
+            save(filename, '-struct', 'net_struct') ;
+            clear('net_struct');
+        end
+        
+        function load_net(obj, filename)
+            net_struct = load(filename) ;
+            obj.net = dagnn.DagNN.loadobj(net_struct) ;
+            clear(net_struct);
         end
         
         function save(obj, filename)
@@ -647,48 +567,22 @@ classdef CNN < handle
     end
     
     methods (Static)
-        %todo change for 3d
-        function c = quadratic_cost_function(y, a)
-            u = (a - y) .^ 2;
-            c = 0.5 * sum(u(:));
-        end
-        %todo change for 3d
-        function c = diff_quadratic_cost_function(y, a)
-            c = a - y;
-        end
+        function tensor = cell_array_to_tensor(cell_array)
+            tensor_size = horzcat(...
+                size(cell_array{1}), ...
+                length(cell_array) ...
+            );
         
-        function a = logistic_activation_function(z)
-            a = logsig(z);
-        end
-        
-        function a = diff_logistic_activation_function(z)
-            u = logsig(z);
-            a = u .* (1 - u);
-        end
-        
-        function a = rectifier_activation_function(z)
-            a = log(1 + exp(z));
-        end
-        
-        function a = diff_rectifier_activation_function(z)
-            a = logsig(z);
-        end
-        
-        function a = tanh_activation_function(z)
-            a = 2 * logsig(z) - 1;
-        end
-        
-        function a = diff_tanh_activation_function(z)
-            u = logsig(2 * z);
-            a = 4 * (u .* (1 - u));
-        end
-        
-        function a = line_activation_function(z)
-            a = z;
-        end
-        
-        function a = diff_line_activation_function(z)
-            a = ones(size(z));
+            indexes = cell(1, length(tensor_size));
+            for i = 1:length(tensor_size)
+                indexes{i} = 1:tensor_size(i);
+            end
+            
+            tensor = zeros(tensor_size);
+            for i = 1:length(cell_array)
+                indexes{end} = i;
+                tensor(indexes{:}) = cell_array{i};
+            end
         end
         
         function plot_regression(target, output, axes_title, color)
