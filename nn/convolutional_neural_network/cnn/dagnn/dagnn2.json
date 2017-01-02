@@ -1,27 +1,32 @@
 {
-    "input": {
-        "name": "x",
-        "size": [
-            5,
-            5,
-            5
-        ]
-    },
-    "output": {
-        "name": "a_G",
-        "size": [
-            5,
-            5,
-            5
-        ]
+    "vars": {
+        "input": {
+            "name": "x",
+            "size": [
+                10,
+                10
+            ]
+        },
+        "output": {
+            "name": "a_G",
+            "size": [
+                4,
+                4
+            ]
+        },
+        "expected_output": {
+            "name": "y"
+        },
+        "cost": {
+            "name": "cost"
+        }
     },
     "params": [
         {
             "name": "w_B",
             "size": [
-                5,
-                5,
-                5
+                3,
+                3
             ]
         },
         {
@@ -33,9 +38,8 @@
         {
             "name": "w_A",
             "size": [
-                5,
-                5,
-                5
+                3,
+                3
             ]
         },
         {
@@ -45,15 +49,27 @@
             ]
         },
         {
-            "name": "w_G",
+            "name": "w_GA",
             "size": [
-                5,
+                3,
+                3
+            ]
+        },
+        {
+            "name": "b_GA",
+            "size": [
+                1
+            ]
+        },
+        {
+            "name": "w_GB",
+            "size": [
                 5,
                 5
             ]
         },
         {
-            "name": "b_G",
+            "name": "b_GB",
             "size": [
                 1
             ]
@@ -107,7 +123,7 @@
             "type": "relu",
             "opts": {},
             "inputs": [
-                "z_B"
+                "z_A"
             ],
             "outputs": [
                 "a_A"
@@ -115,19 +131,71 @@
             "params": null
         },
         {
-            "name": "conv_G",
+            "name": "conv_GA",
             "type": "conv",
             "opts": null,
             "inputs": [
                 "a_A"
             ],
             "outputs": [
-                "z_G"
+                "z_GA"
             ],
             "params": [
-                "w_G",
-                "b_G"
+                "w_GA",
+                "b_GA"
             ]
+        },
+        {
+            "name": "relu_GA",
+            "type": "relu",
+            "opts": null,
+            "inputs": [
+                "z_GA"
+            ],
+            "outputs": [
+                "a_GA"
+            ],
+            "params": null
+        },
+        {
+            "name": "conv_GB",
+            "type": "conv",
+            "opts": null,
+            "inputs": [
+                "a_B"
+            ],
+            "outputs": [
+                "z_GB"
+            ],
+            "params": [
+                "w_GB",
+                "b_GB"
+            ]
+        },
+        {
+            "name": "relu_GB",
+            "type": "relu",
+            "opts": null,
+            "inputs": [
+                "z_GB"
+            ],
+            "outputs": [
+                "a_GB"
+            ],
+            "params": null
+        },
+        {
+            "name": "sum_G",
+            "type": "sum",
+            "opts": null,
+            "inputs": [
+                "a_GA",
+                "a_GB"
+            ],
+            "outputs": [
+                "a_G"
+            ],
+            "params": null
         },
         {
             "name": "cost",
@@ -138,19 +206,7 @@
                 "y"
             ],
             "outputs": [
-                "c"
-            ],
-            "params": null
-        },
-        {
-            "name": "relu_G",
-            "type": "relu",
-            "opts": {},
-            "inputs": [
-                "z_G"
-            ],
-            "outputs": [
-                "a_G"
+                "cost"
             ],
             "params": null
         }
@@ -160,10 +216,10 @@
         0.15,
         0.15
     ],
-    "number_of_samples": 100,
+    "number_of_samples": 20,
     "learning_rate": 0.001,
-    "batch_size": 10,
-    "epochs": 50,
-    "number_of_val_fails": 6,
+    "batch_size": 2,
+    "number_of_epochs": 10,
+    "number_of_val_fails": 5,
     "device": "cpu"
 }
