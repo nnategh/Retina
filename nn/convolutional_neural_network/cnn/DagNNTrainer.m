@@ -4,10 +4,12 @@ classdef DagNNTrainer < handle
     properties
         % independant
         props                           % properties of cnn (based on json file)
-        db                              % database is struct('x', cell array, 'y', cell array)
+        db                              % database : struct('x', cell array, 'y', cell array)
         params_generator                % parameters generator (@rand, @randn, ...)
+        backup_dir                      % directory of saving data for each epoch
         
         % dependant
+        current_epoch                   % current epoch
         net                             % DagNN
         data                            % struct(...
                                         %   'train', struct('x', cell array, 'y', cell array), ...
@@ -19,16 +21,22 @@ classdef DagNNTrainer < handle
                                         %   'val', double array, ...
                                         %   'test', double array ...
                                         % )
+        elapsed_times                   % array of elased times
     end
-    
+
     methods
-        function obj = DagNNTrainer(dagnn_path, db_path)
+        function obj = DagNNTrainer(dagnn_filename, db_filename)
             % props
-            obj.init_props(dagnn_path);
+            obj.init_props(dagnn_filename);
+
             % db
-            obj.init_db(db_path);
+            obj.init_db(db_filename);
+
             % params_generator
             obj.params_generator = @rand;
+
+            % backup_dir
+            obj.backup_dir = './backup';
         end
         
         function init_props(obj, filename)
@@ -76,18 +84,84 @@ classdef DagNNTrainer < handle
             obj.db = getfield(load(filename), 'db'); 
         end
         
+        function init_backup_dir(obj)
+            if ~exist(obj.backup_dir, 'dir')
+                mkdir(obj.backup_dir);
+            end
+        end
+        
+        function init_current_epoch(obj)
+            list = dir(fullfile(obj.backup_dir, 'epoch_*.mat'));
+            tokens = regexp({list.name}, 'epoch_([\d]+).mat', 'tokens');
+            epoch = cellfun(@(x) sscanf(x{1}{1}, '%d'), tokens);
+            obj.current_epoch = max(epoch);
+        end
+        
+        function init_net(obj)
+            if isempty(obj.current_epoch)
+                obj.current_epoch = 0;
+                % blocks
+                blocks = struct(...
+                    'conv', @dagnn.Conv, ...
+                    'relu', @dagnn.ReLU, ...
+                    'norm', @dagnn.NormOverall, ...
+                    'sum', @dagnn.Sum, ...
+                    'quadcost', @dagnn.QuadraticCost ...
+                );
+
+                % define object
+                obj.net = dagnn.DagNN();
+                % obj.net.conserveMemory = false;
+
+                % add layers
+                layers = obj.props.layers;
+                for i = 1:length(layers)
+                    obj.net.addLayer(...
+                        layers(i).name, blocks.(layers(i).type)(), ...
+                        layers(i).inputs, ...
+                        layers(i).outputs, ...
+                        layers(i).params ...
+                    );
+                end
+
+                % init params
+                obj.init_params();
+
+                % set 'size' property of 'Conv' blocks
+                for i = 1:length(obj.net.layers)
+                    if isa(obj.net.layers(i).block, 'dagnn.Conv')
+                        param_name = obj.net.layers(i).params{1};
+                        param_index = obj.net.getParamIndex(param_name);
+                        param_size = size(obj.net.params(param_index).value);
+
+                        obj.net.layers(i).block.size = ...
+                            horzcat(param_size, [1, 1]);
+                    end
+                end
+                
+                obj.save_net();
+            else
+                obj.load_net();
+            end
+        end
+        
         function init_data(obj)
             % number of samples
-            n = obj.net.meta.number_of_samples;
+            n = obj.props.number_of_samples;
             
             % ratios
             % - train
-            ratios.train = obj.net.meta.train_val_test_ratios(1);
+            ratios.train = obj.props.train_val_test_ratios(1);
             % - test
-            ratios.val = obj.net.meta.train_val_test_ratios(2);
+            ratios.val = obj.props.train_val_test_ratios(2);
             
             % shuffle db
-            indexes = randperm(n);
+            if exist(obj.get_db_indexes_filename(), 'file')
+                indexes = obj.load_db_indexes();
+            else
+                indexes = randperm(n);
+                obj.save_db_indexes(indexes);
+            end
             
             % end index
             % - train
@@ -115,50 +189,6 @@ classdef DagNNTrainer < handle
             obj.data.test.x = obj.db.x(indexes(end_index.val + 1:end_index.test));
             % -- y
             obj.data.test.y = obj.db.y(indexes(end_index.val + 1:end_index.test));
-        end
-        
-        function init_net(obj)
-            % blocks
-            blocks = struct(...
-                'conv', @dagnn.Conv, ...
-                'relu', @dagnn.ReLU, ...
-                'norm', @dagnn.NormOverall, ...
-                'sum', @dagnn.Sum, ...
-                'quadcost', @dagnn.QuadraticCost ...
-            );
-            
-            % define object
-            obj.net = dagnn.DagNN();
-            % obj.net.conserveMemory = false;
-            
-            % add layers
-            layers = obj.props.layers;
-            for i = 1:length(layers)
-                obj.net.addLayer(...
-                    layers(i).name, blocks.(layers(i).type)(), ...
-                    layers(i).inputs, ...
-                    layers(i).outputs, ...
-                    layers(i).params ...
-                );
-            end
-            
-            % init params
-            obj.init_params();
-            
-            % set 'size' property of 'Conv' blocks
-            for i = 1:length(obj.net.layers)
-                if isa(obj.net.layers(i).block, 'dagnn.Conv')
-                    param_name = obj.net.layers(i).params{1};
-                    param_index = obj.net.getParamIndex(param_name);
-                    param_size = size(obj.net.params(param_index).value);
-                    
-                    obj.net.layers(i).block.size = ...
-                        horzcat(param_size, [1, 1]);
-                end
-            end
-            
-            % init meta
-            obj.init_meta()
         end
         
         function init_params(obj)
@@ -205,13 +235,13 @@ classdef DagNNTrainer < handle
             for i = 1:n
                 obj.net.eval(...
                     {...
-                        obj.net.meta.input_name, x{i}, ...
-                        obj.net.meta.expected_output_name, y{i} ...
+                        obj.props.vars.input.name, x{i}, ...
+                        obj.props.vars.expected_output.name, y{i} ...
                     } ...
                 );
 
                 cost = cost + obj.net.vars(...
-                    obj.net.getVarIndex(obj.net.meta.cost_name) ...
+                    obj.net.getVarIndex(obj.props.vars.cost.name) ...
                 ).value;
             end
             
@@ -234,28 +264,58 @@ classdef DagNNTrainer < handle
         end
         
         function init_costs(obj)
-            % train costs
-            obj.costs.train = [];
-            obj.costs.train(end + 1) = obj.get_train_cost();
+            if exist(obj.get_costs_filename(), 'file')
+                obj.load_costs();
+                obj.costs.train = ...
+                    obj.costs.train(1:obj.current_epoch + 1);
+                obj.costs.val = ...
+                    obj.costs.val(1:obj.current_epoch + 1);
+                obj.costs.test = ...
+                    obj.costs.test(1:obj.current_epoch + 1);
+            else
+                % train costs
+                obj.costs.train(1) = obj.get_train_cost();
 
-            % val costs
-            obj.costs.val = [];
-            obj.costs.val(end + 1) = obj.get_val_cost();
-            
-            % test costs
-            obj.costs.test = [];
-            obj.costs.test(end + 1) = obj.get_test_cost();
+                % val costs
+                obj.costs.val(1) = obj.get_val_cost();
+
+                % test costs
+                obj.costs.test(1) = obj.get_test_cost();
+                
+                % save
+                obj.save_costs();
+            end
+        end
+        
+        function init_elapsed_times(obj)
+            if exist(obj.get_elapsed_times_filename(), 'file')
+                obj.load_elapsed_times();
+                obj.elapsed_times = ...
+                    obj.elapsed_times(1:obj.current_epoch + 1);
+            else
+                obj.elapsed_times(1) = 0;
+                obj.save_elapsed_times();
+            end
         end
         
         function init(obj)
+            % backup directory
+            obj.init_backup_dir()
+
+            % current epoch
+            obj.init_current_epoch()
+
             % net
-             obj.init_net();
+            obj.init_net();
 
             % data
             obj.init_data();
 
             % costs
             obj.init_costs();
+            
+            % elapsed times
+            obj.init_elapsed_times();
         end
         
         function y = out(obj, x)
@@ -263,11 +323,11 @@ classdef DagNNTrainer < handle
             y = cell(n, 1);
             for i = 1:n
                 obj.net.eval(...
-                    {obj.net.meta.input_name, x{i}} ...
+                    {obj.props.vars.input.name, x{i}} ...
                 );
 
                 y{i} = obj.net.vars(...
-                    obj.net.getVarIndex(obj.net.meta.output_name) ...
+                    obj.net.getVarIndex(obj.props.vars.output.name) ...
                 ).value;
             end
         end
@@ -401,15 +461,18 @@ classdef DagNNTrainer < handle
             % init net
             obj.init();
             
+            obj.current_epoch = obj.current_epoch + 1;
+            
             % print epoch progress (epoch 0)
-            obj.print_epoch_progress(0, 0)
+            obj.print_epoch_progress()
             
             % epoch number that network has minimum cost on validation data
-            index_min_val_cost = 1;
+            [~, index_min_val_cost] = min(obj.costs.val);
             
             n = length(obj.data.train.x);
-            batch_size = obj.net.meta.batch_size - 1;
-            for epoch = 1:obj.net.meta.number_of_epochs
+            batch_size = obj.props.batch_size - 1;
+            
+            while obj.current_epoch <= obj.props.number_of_epochs
                 begin_time = cputime();
                 % shuffle train data
                 permuted_indexes = randperm(n);
@@ -434,22 +497,25 @@ classdef DagNNTrainer < handle
                     % forwar, backward step
                     obj.net.eval(...
                         {...
-                            obj.net.meta.input_name, input, ...
-                            obj.net.meta.expected_output_name, expected_output
+                            obj.props.vars.input.name, input, ...
+                            obj.props.vars.expected_output.name, expected_output
                         }, ...
-                        {obj.net.meta.cost_name, 1} ...
+                        {obj.props.vars.cost.name, 1} ...
                     );
 
                     % update step
                     for param_index = 1:length(obj.net.params)
                         obj.net.params(param_index).value = ...
                             obj.net.params(param_index).value - ...
-                            obj.net.meta.learning_rate * obj.net.params(param_index).der;
+                            obj.props.learning_rate * obj.net.params(param_index).der;
                     end
                     
                     % print samples progress
                     fprintf('Samples:\t%d-%d/%d\n', start_index, end_index, n);
                 end
+                
+                % elapsed times
+                obj.elapsed_times(end + 1) = cputime() - begin_time();
                 % costs
                 % - train
                 obj.costs.train(end + 1) = obj.get_train_cost();
@@ -464,66 +530,155 @@ classdef DagNNTrainer < handle
                 end
                 
                 if (length(obj.costs.val) - index_min_val_cost) >= ...
-                        obj.net.meta.number_of_val_fails
+                        obj.props.number_of_val_fails
                     break;
                 end
                 
                 % print epoch progress
-                obj.print_epoch_progress(epoch, cputime() - begin_time)
+                obj.print_epoch_progress()
 
-%                 % print epoch number
-%                 fprintf(repmat('\b', 1, length(progress_message)));
-%                 progress_message = sprintf('Epoch: %d', epoch);
-%                 fprintf(progress_message);
+                % save
+                % - costs
+                obj.save_costs();
+                % - elapsed times
+                obj.save_elapsed_times();
+                % - net
+                obj.save_net();
                 
-%                 obj.save_net(sprintf('./epoch_%d', epoch));
+                % increament current epoch
+                obj.current_epoch = obj.current_epoch + 1;
             end
-%             fprintf('\n');
             
             % todo: load best validation performance
         end
         
-        function print_epoch_progress(obj, epoch, elapsed_time)
+        function filename = get_current_epoch_filename(obj)
+            filename = fullfile(...
+                obj.backup_dir, ...
+                sprintf('epoch_%d', obj.current_epoch) ...
+            );
+        end
+        
+        function filename = get_costs_filename(obj)
+            filename = fullfile(...
+                obj.backup_dir, ...
+                'costs.mat' ...
+            );
+        end
+        
+        function filename = get_elapsed_times_filename(obj)
+            filename = fullfile(...
+                obj.backup_dir, ...
+                'elapsed_times.mat' ...
+            );
+        end
+        
+        function filename = get_db_indexes_filename(obj)
+            filename = fullfile(...
+                obj.backup_dir, ...
+                'db_indexes.mat' ...
+            );
+        end
+        
+        function print_epoch_progress(obj)
             % Examples
             % --------
             % 1. 
             %   ```
-            %   >>> obj.print_epoch_progress(1, 0.18)
+            %   >>> obj.print_epoch_progress()
             %   --------------------------------
-            %   Epoch:	1
+            %   Epoch:	...
             %   Costs:	[..., ..., ...]
-            %   Time:	0.18 s
+            %   Time:	... s
             %   --------------------------------
             %   ```
             
             DagNNTrainer.print_dashline();
-            fprintf('Epoch:\t%d\n', epoch);
+            fprintf('Epoch:\t%d\n', obj.current_epoch);
             fprintf('Costs:\t[%.3f, %.3f, %.3f]\n', ...
                 obj.costs.train(end), ...
                 obj.costs.val(end), ...
                 obj.costs.test(end) ...
             );
-            fprintf('Time:\t%f s\n', elapsed_time); 
+            fprintf('Time:\t%f s\n', ...
+                obj.elapsed_times(obj.current_epoch)); 
             DagNNTrainer.print_dashline();
         end
         
-        function save_net(obj, filename)
+        function save_costs(obj)
+            costs = obj.costs;
+            
+            save(...
+                obj.get_costs_filename(), ...
+                'costs' ...
+            );
+        
+            clear('costs');
+        end
+        
+        function load_costs(obj)
+            obj.costs = getfield(...
+                load(obj.get_costs_filename()), ...
+                'costs' ...
+            );
+        end
+        
+        function save_elapsed_times(obj)
+            elapsed_times = obj.elapsed_times;
+            save(...
+                obj.get_elapsed_times_filename(), ...
+                'elapsed_times' ...
+            );
+        
+            clear('elapsed_times');
+        end
+        
+        function load_elapsed_times(obj)
+            obj.elapsed_times = getfield(...
+                load(obj.get_elapsed_times_filename()), ...
+                'elapsed_times' ...
+            );
+        end
+        
+        function save_db_indexes(obj, indexes)
+            db_indexes = indexes;
+            save(...
+                obj.get_db_indexes_filename(), ...
+                'db_indexes' ...
+            );
+        end
+        
+        function db_indexes = load_db_indexes(obj)
+            db_indexes = getfield(...
+                load(obj.get_db_indexes_filename()), ...
+                'db_indexes' ...
+            );
+        end
+        
+        function save_net(obj)
             net_struct = obj.net.saveobj();
-            save(filename, '-struct', 'net_struct') ;
+            save(...
+                obj.get_current_epoch_filename(), ...
+                '-struct', 'net_struct' ...
+            ) ;
+
             clear('net_struct');
         end
         
-        function load_net(obj, filename)
-            net_struct = load(filename) ;
+        function load_net(obj)
+            net_struct = load(...
+                obj.get_current_epoch_filename() ...
+            ) ;
+
             obj.net = dagnn.DagNN.loadobj(net_struct) ;
-            clear(net_struct);
+            clear('net_struct');
         end
         
         function save(obj, filename)
             save(filename, 'obj');
         end
     end
-    
+
     methods (Static)
         function tensor = cell_array_to_tensor(cell_array)
             tensor_size = horzcat(...
@@ -596,5 +751,5 @@ classdef DagNNTrainer < handle
             fprintf('\n');
         end
     end
-    
+
 end

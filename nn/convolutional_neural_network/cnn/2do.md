@@ -8,7 +8,7 @@
 1. Refactor
     1. documentation
     1. dagnn.json
-
+1. init_current_epoch
 
 ---
 1. ~~Create folders~~
@@ -17,6 +17,6 @@
 1. ~~Normalize~~
     1. ~~Paint~~
     1. ~~Implement~~
-1. ~~Meta~~
+1. Remove Meta
 1. Load/Save
 
