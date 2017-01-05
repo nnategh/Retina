@@ -750,6 +750,123 @@ classdef DagNNTrainer < handle
             fprintf(repmat('-', 1, length_of_line));
             fprintf('\n');
         end
+        
+        function dg = make_digraph(filename)
+            % GET_DIGRAPH makes a directed-graph based on given 'json' file
+            %
+            % Parameters
+            % ----------
+            % - filename : char vector
+            %   filename of input 'json' file
+            %
+            % Returns
+            % - dg : digraph
+            %   directed graph
+            %
+            % Examples
+            % --------
+            % 1. 
+            %   >>> filename = './dagnn.json';
+            %   >>> dg = DagNNTrainer.make_digraph(dagnn_filename);
+            %   >>> dg.Edges
+            %    EndNodes 
+            %   __________
+            %      ...
+            
+            % read 'json' file
+            props = jsondecode(fileread(filename));
+            
+            % add layers to digraph
+            dg = digraph();
+            
+            for l = 1 : length(props.layers)
+                layer = props.layers(l);
+                block = layer.name;
+                
+                % add edges
+                % - inputs, block
+                for i = 1 : length(layer.inputs)
+                    x = layer.inputs(i);
+                    dg = addedge(dg, x, block);
+                end
+                % - params, block
+                for i = 1 : length(layer.params)
+                    w = layer.params(i);
+                    dg = addedge(dg, w, block);
+                end
+                % - block, outputs
+                for i = 1 : length(layer.outputs)
+                    y = layer.outputs(i);
+                    dg = addedge(dg, block, y);
+                end
+            end
+        end
+        
+        function plot_digraph(filename)
+            % PLOT_DIGRAPH plot a directed-graph based on given 'json' file
+            %
+            % Parameters
+            % ----------
+            % - filename : char vector
+            %   filename of input 'json' file
+            %
+            % Examples
+            % --------
+            % 1. 
+            %   >>> filename = './dagnn.json';
+            %   >>> dg = DagNNTrainer.plot_digraph(dagnn_filename);
+            %   ...
+            
+            % read 'json' file
+            props = jsondecode(fileread(filename)); 
+            
+            % make digraph
+            dg = DagNNTrainer.make_digraph(filename);
+            
+            % plot graph
+            h = plot(dg);
+            
+            % layout
+            layout(h, 'layered', ...
+                'Direction', 'right', ...
+                'Sources', props.vars.input.name, ...
+                'Sinks', props.vars.cost.name, ...
+                'AssignLayers', 'asap' ...
+            );
+        
+            % highlight
+            % - input, output
+            highlight(h, ...
+                {props.vars.input.name, props.vars.expected_output.name}, ...
+                'NodeColor', 'red' ...
+            );
+            % - params
+            params = {};
+            for i = 1 : length(props.params)
+                params{end + 1} = props.params(i).name;
+            end
+            highlight(h, ...
+                params, ...
+                'NodeColor', 'green' ...
+            );
+            % - blocks
+            ms = h.MarkerSize;
+            blocks = {};
+            for i = 1 : length(props.layers)
+                blocks{end + 1} = props.layers(i).name;
+            end
+            highlight(h, ...
+                blocks, ...
+                'Marker', 's', ...
+                'MarkerSize', 5 * ms ...
+            );
+            % hide axes
+            set(h.Parent, ...
+                'XTick', [], ...
+                'YTick', [] ...
+            );
+            
+        end
     end
 
 end

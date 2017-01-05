@@ -18,7 +18,7 @@
             "name": "y"
         },
         "cost": {
-            "name": "cost"
+            "name": "c"
         }
     },
     "params": [
@@ -189,7 +189,7 @@
                 "y"
             ],
             "outputs": [
-                "cost"
+                "c"
             ],
             "params": null
         }
@@ -200,7 +200,7 @@
         0.15
     ],
     "number_of_samples": 20,
-    "learning_rate": 0.01,
+    "learning_rate": 0.001,
     "batch_size": 10,
     "number_of_epochs": 50,
     "number_of_val_fails": 10,

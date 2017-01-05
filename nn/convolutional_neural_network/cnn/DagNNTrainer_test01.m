@@ -3,12 +3,14 @@ close('all');
 clear();
 clc();
 
+% run('D:\PhD\MSU\codes\matconvnet\matconvnet-1.0-beta23\matlab\vl_setupnn.m');
+
 %% Properties
-dagnn_path = './dagnn/dagnn1.1.json';
-db_path = './data/db1.mat';
+dagnn_filename = './dagnn/dagnn1.1.json';
+db_filename = './data/db1.mat';
 
 %% Net
-cnn = DagNNTrainer(dagnn_path, db_path);
+cnn = DagNNTrainer(dagnn_filename, db_filename);
 cnn.run();
 
 %% Results
@@ -28,3 +30,7 @@ cnn.plot_costs();
 %     output_size, ...
 %     generator ...
 % );
+
+%% Plot digraph
+figure();
+DagNNTrainer.plot_digraph(dagnn_filename);

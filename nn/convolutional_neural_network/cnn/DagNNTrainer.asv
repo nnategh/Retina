@@ -94,11 +94,12 @@ classdef DagNNTrainer < handle
             list = dir(fullfile(obj.backup_dir, 'epoch_*.mat'));
             tokens = regexp({list.name}, 'epoch_([\d]+).mat', 'tokens');
             epoch = cellfun(@(x) sscanf(x{1}{1}, '%d'), tokens);
-            obj.current_epoch = max([epoch 0]);
+            obj.current_epoch = max(epoch);
         end
         
         function init_net(obj)
-            if obj.current_epoch < 1
+            if isempty(obj.current_epoch)
+                obj.current_epoch = 0;
                 % blocks
                 blocks = struct(...
                     'conv', @dagnn.Conv, ...
@@ -140,6 +141,7 @@ classdef DagNNTrainer < handle
                 
                 obj.save_net();
             else
+                obj.load_net();
             end
         end
         
@@ -263,7 +265,13 @@ classdef DagNNTrainer < handle
         
         function init_costs(obj)
             if exist(obj.get_costs_filename(), 'file')
-                obj.load_costs()
+                obj.load_costs();
+                obj.costs.train = ...
+                    obj.costs.train(1:obj.current_epoch + 1);
+                obj.costs.val = ...
+                    obj.costs.val(1:obj.current_epoch + 1);
+                obj.costs.test = ...
+                    obj.costs.test(1:obj.current_epoch + 1);
             else
                 % train costs
                 obj.costs.train(1) = obj.get_train_cost();
@@ -273,14 +281,20 @@ classdef DagNNTrainer < handle
 
                 % test costs
                 obj.costs.test(1) = obj.get_test_cost();
+                
+                % save
+                obj.save_costs();
             end
         end
         
         function init_elapsed_times(obj)
-            if exist(get_elapsed_times_filename(), 'file')
-                obj.load_elapsed_times()
+            if exist(obj.get_elapsed_times_filename(), 'file')
+                obj.load_elapsed_times();
+                obj.elapsed_times = ...
+                    obj.elapsed_times(1:obj.current_epoch + 1);
             else
                 obj.elapsed_times(1) = 0;
+                obj.save_elapsed_times();
             end
         end
         
@@ -447,6 +461,8 @@ classdef DagNNTrainer < handle
             % init net
             obj.init();
             
+            obj.current_epoch = obj.current_epoch + 1;
+            
             % print epoch progress (epoch 0)
             obj.print_epoch_progress()
             
@@ -456,7 +472,6 @@ classdef DagNNTrainer < handle
             n = length(obj.data.train.x);
             batch_size = obj.props.batch_size - 1;
             
-            obj.current_epoch = obj.current_epoch + 1;
             while obj.current_epoch <= obj.props.number_of_epochs
                 begin_time = cputime();
                 % shuffle train data
@@ -520,7 +535,7 @@ classdef DagNNTrainer < handle
                 end
                 
                 % print epoch progress
-                obj.print_epoch_progress(cputime() - begin_time)
+                obj.print_epoch_progress()
 
                 % save
                 % - costs
@@ -591,10 +606,14 @@ classdef DagNNTrainer < handle
         end
         
         function save_costs(obj)
+            costs = obj.costs;
+            
             save(...
                 obj.get_costs_filename(), ...
-                '-struct', 'obj', 'costs' ...
+                'costs' ...
             );
+        
+            clear('costs');
         end
         
         function load_costs(obj)
@@ -605,14 +624,17 @@ classdef DagNNTrainer < handle
         end
         
         function save_elapsed_times(obj)
+            elapsed_times = obj.elapsed_times;
             save(...
                 obj.get_elapsed_times_filename(), ...
-                '-struct', 'obj', 'elapsed_times' ...
+                'elapsed_times' ...
             );
+        
+            clear('elapsed_times');
         end
         
         function load_elapsed_times(obj)
-            obj.costs = getfield(...
+            obj.elapsed_times = getfield(...
                 load(obj.get_elapsed_times_filename()), ...
                 'elapsed_times' ...
             );
@@ -649,7 +671,7 @@ classdef DagNNTrainer < handle
             ) ;
 
             obj.net = dagnn.DagNN.loadobj(net_struct) ;
-            clear(net_struct);
+            clear('net_struct');
         end
         
         function save(obj, filename)
@@ -727,6 +749,120 @@ classdef DagNNTrainer < handle
             
             fprintf(repmat('-', 1, length_of_line));
             fprintf('\n');
+        end
+        
+        function dg = make_digraph(filename)
+            % GET_DIGRAPH makes a directed-graph based on given 'json' file
+            %
+            % Parameters
+            % ----------
+            % - filename : char vector
+            %   filename of input 'json' file
+            %
+            % Returns
+            % - dg : digraph
+            %   directed graph
+            %
+            % Examples
+            % --------
+            % 1. 
+            %   >>> filename = './dagnn.json';
+            %   >>> dg = DagNNTrainer.make_digraph(dagnn_filename);
+            %   >>> dg.Edges
+            %    EndNodes 
+            %   __________
+            %      ...
+            
+            % read 'json' file
+            props = jsondecode(fileread(filename));
+            
+            % add layers to digraph
+            dg = digraph();
+            
+            for l = 1 : length(props.layers)
+                layer = props.layers(l);
+                block = layer.name;
+                
+                % add edges
+                % - inputs, block
+                for i = 1 : length(layer.inputs)
+                    x = layer.inputs(i);
+                    dg = addedge(dg, x, block);
+                end
+                % - params, block
+                for i = 1 : length(layer.params)
+                    w = layer.params(i);
+                    dg = addedge(dg, w, block);
+                end
+                % - block, outputs
+                for i = 1 : length(layer.outputs)
+                    y = layer.outputs(i);
+                    dg = addedge(dg, block, y);
+                end
+            end
+        end
+        
+        function plot_digraph(filename)
+            % PLOT_DIGRAPH plot a directed-graph based on given 'json' file
+            %
+            % Parameters
+            % ----------
+            % - filename : char vector
+            %   filename of input 'json' file
+            %
+            % Examples
+            % --------
+            % 1. 
+            %   >>> filename = './dagnn.json';
+            %   >>> dg = DagNNTrainer.plot_digraph(dagnn_filename);
+            %   ...
+            
+            % read 'json' file
+            props = jsondecode(fileread(filename)); 
+            
+            % make digraph
+            dg = DagNNTrainer.make_digraph(filename);
+            
+            % plot graph
+            h = plot(dg);
+            
+            % layout
+            layout(h, 'layered', ...
+                'Direction', 'right', ...
+                'Sources', props.vars.input.name, ...
+                'Sinks', props.vars.cost.name, ...
+                'AssignLayers', 'asap' ...
+            );
+        
+            % highlight
+            % - input, output
+            highlight(h, ...
+                {props.vars.input.name, props.vars.expected_output.name}, ...
+                'NodeColor', 'red' ...
+            );
+            % - params
+            params = {};
+            for i = 1 : length(props.params)
+                params{end + 1} = props.params(i).name;
+            end
+            highlight(h, ...
+                params, ...
+                'NodeColor', 'green' ...
+            );
+            % - blocks
+            ms = h.MarkerSize;
+            blocks = {};
+            for i = 1 : length(props.layers)
+                blocks{end + 1} = props.layers(i).name;
+            end
+            highlight(h, ...
+                blocks, ...
+                'Marker', 's', ...
+                'MarkerSize', 5 * ms ...
+            );
+            
+            % 
+            
         end
     end
 
