@@ -99,12 +99,16 @@ classdef DagNNTrainer < handle
         
         function init_net(obj)
             if isempty(obj.current_epoch)
-                obj.current_epoch = 0;
+                obj.current_epoch = 1;
                 % blocks
                 blocks = struct(...
                     'conv', @dagnn.Conv, ...
-                    'relu', @dagnn.ReLU, ...
                     'norm', @dagnn.NormOverall, ...
+                    'relu', @dagnn.ReLU, ...
+                    'minus', @dagnn.Minus, ...
+                    'convnorm', @dagnn.ConvNorm, ...
+                    'convnormrelu', @dagnn.ConvNormReLU, ...
+                    'convnormreluminus', @dagnn.ConvNormReLUMinus, ...
                     'sum', @dagnn.Sum, ...
                     'quadcost', @dagnn.QuadraticCost ...
                 );
@@ -129,13 +133,15 @@ classdef DagNNTrainer < handle
 
                 % set 'size' property of 'Conv' blocks
                 for i = 1:length(obj.net.layers)
-                    if isa(obj.net.layers(i).block, 'dagnn.Conv')
+                    if startsWith(...
+                            class(obj.net.layers(i).block), ...
+                            'dagnn.Conv' ...
+                        )
                         param_name = obj.net.layers(i).params{1};
                         param_index = obj.net.getParamIndex(param_name);
                         param_size = size(obj.net.params(param_index).value);
 
-                        obj.net.layers(i).block.size = ...
-                            horzcat(param_size, [1, 1]);
+                        obj.net.layers(i).block.set_kernel_size(param_size);
                     end
                 end
                 
@@ -267,11 +273,11 @@ classdef DagNNTrainer < handle
             if exist(obj.get_costs_filename(), 'file')
                 obj.load_costs();
                 obj.costs.train = ...
-                    obj.costs.train(1:obj.current_epoch + 1);
+                    obj.costs.train(1:obj.current_epoch);
                 obj.costs.val = ...
-                    obj.costs.val(1:obj.current_epoch + 1);
+                    obj.costs.val(1:obj.current_epoch);
                 obj.costs.test = ...
-                    obj.costs.test(1:obj.current_epoch + 1);
+                    obj.costs.test(1:obj.current_epoch);
             else
                 % train costs
                 obj.costs.train(1) = obj.get_train_cost();
@@ -291,7 +297,7 @@ classdef DagNNTrainer < handle
             if exist(obj.get_elapsed_times_filename(), 'file')
                 obj.load_elapsed_times();
                 obj.elapsed_times = ...
-                    obj.elapsed_times(1:obj.current_epoch + 1);
+                    obj.elapsed_times(1:obj.current_epoch);
             else
                 obj.elapsed_times(1) = 0;
                 obj.save_elapsed_times();
@@ -461,10 +467,10 @@ classdef DagNNTrainer < handle
             % init net
             obj.init();
             
-            obj.current_epoch = obj.current_epoch + 1;
-            
-            % print epoch progress (epoch 0)
+            % print epoch progress (last saved epoch)
             obj.print_epoch_progress()
+            
+            obj.current_epoch = obj.current_epoch + 1;
             
             % epoch number that network has minimum cost on validation data
             [~, index_min_val_cost] = min(obj.costs.val);
