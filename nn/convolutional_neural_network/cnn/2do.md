@@ -11,14 +11,20 @@
 1. init_current_epoch
 
 ---
-1. ~~Create folders~~
-    1. ~~dagnn~~
-    1. ~~data~~
-1. ~~Normalize~~
-    1. ~~Paint~~
-    1. ~~Implement~~
-1. Remove Meta
-1. Load/Save
 
-
-[yasin]: www.google.com
+1. ~~Write new blocks~~
+    1. ~~Minus~~
+    1. ~~ConvNorm~~
+    1. ~~ConvNormReLU~~
+    1. ~~ConvNormReLUMinus~~
+1. ~~Test new blocks~~
+1. Make training data
+    1. x
+    1. y
+    1. w
+        1. bipolar
+        1. amacrine
+        1. ganglion
+1. Learning parameters
+1. Journal finder
+1. Illustraotr
