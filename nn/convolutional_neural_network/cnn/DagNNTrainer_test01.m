@@ -6,7 +6,7 @@ clc();
 % run('D:\PhD\MSU\codes\matconvnet\matconvnet-1.0-beta23\matlab\vl_setupnn.m');
 
 %% Properties
-dagnn_filename = './dagnn/dagnn1.1.json';
+dagnn_filename = './dagnn/fig4.1.json';
 db_filename = './data/db1.mat';
 
 %% Net
