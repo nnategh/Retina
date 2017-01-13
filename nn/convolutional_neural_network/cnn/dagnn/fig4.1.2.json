@@ -1,0 +1,156 @@
+{
+    "vars": {
+        "input": {
+            "name": "x",
+            "size": [
+                10,
+                10
+            ]
+        },
+        "output": {
+            "name": "r_G",
+            "size": [
+                4,
+                4
+            ]
+        },
+        "expected_output": {
+            "name": "y"
+        },
+        "cost": {
+            "name": "c"
+        }
+    },
+    "params": [
+        {
+            "name": "w_B",
+            "size": [
+                4,
+                4
+            ]
+        },
+        {
+            "name": "b_B",
+            "size": [
+                1
+            ]
+        },
+        {
+            "name": "w_G",
+            "size": [
+                4,
+                4
+            ]
+        },
+        {
+            "name": "b_G",
+            "size": [
+                1
+            ]
+        }
+    ],
+    "layers": [
+        {
+            "name": "conv_B",
+            "type": "conv",
+            "opts": null,
+            "inputs": [
+                "x"
+            ],
+            "outputs": [
+                "c_B"
+            ],
+            "params": [
+                "w_B",
+                "b_B"
+            ]
+        },
+        {
+            "name": "norm_B",
+            "type": "norm",
+            "opts": null,
+            "inputs": [
+                "c_B"
+            ],
+            "outputs": [
+                "n_B"
+            ],
+            "params": null
+        },
+        {
+            "name": "relu_B",
+            "type": "relu",
+            "opts": null,
+            "inputs": [
+                "n_B"
+            ],
+            "outputs": [
+                "r_B"
+            ],
+            "params": null
+        },
+        {
+            "name": "conv_G",
+            "type": "conv",
+            "opts": null,
+            "inputs": [
+                "r_B"
+            ],
+            "outputs": [
+                "c_G"
+            ],
+            "params": [
+                "w_G",
+                "b_G"
+            ]
+        },
+        {
+            "name": "norm_G",
+            "type": "norm",
+            "opts": null,
+            "inputs": [
+                "c_G"
+            ],
+            "outputs": [
+                "n_G"
+            ],
+            "params": null
+        },
+        {
+            "name": "relu_G",
+            "type": "relu",
+            "opts": null,
+            "inputs": [
+                "n_G"
+            ],
+            "outputs": [
+                "r_G"
+            ],
+            "params": null
+        },
+        {
+            "name": "cost",
+            "type": "quadcost",
+            "opts": null,
+            "inputs": [
+                "r_G",
+                "y"
+            ],
+            "outputs": [
+                "c"
+            ],
+            "params": null
+        }
+    ],
+    "train_val_test_ratios": [
+        0.70,
+        0.15,
+        0.15
+    ],
+    "number_of_samples": 20,
+    "learning_rate": 0.001,
+    "batch_size": 10,
+    "number_of_epochs": 50,
+    "number_of_val_fails": 10,
+    "device": "cpu"
+}

@@ -1,0 +1,108 @@
+{
+    "vars": {
+        "input": {
+            "name": "x",
+            "size": [
+                10,
+                10
+            ]
+        },
+        "output": {
+            "name": "G",
+            "size": [
+                4,
+                4
+            ]
+        },
+        "expected_output": {
+            "name": "y"
+        },
+        "cost": {
+            "name": "c"
+        }
+    },
+    "params": [
+        {
+            "name": "w_B",
+            "size": [
+                4,
+                4
+            ]
+        },
+        {
+            "name": "b_B",
+            "size": [
+                1
+            ]
+        },
+        {
+            "name": "w_G",
+            "size": [
+                4,
+                4
+            ]
+        },
+        {
+            "name": "b_G",
+            "size": [
+                1
+            ]
+        }
+    ],
+    "layers": [
+        {
+            "name": "CNR_B",
+            "type": "convnormrelu",
+            "opts": null,
+            "inputs": [
+                "x"
+            ],
+            "outputs": [
+                "B"
+            ],
+            "params": [
+                "w_B",
+                "b_B"
+            ]
+        },
+        {
+            "name": "CNR_G",
+            "type": "convnormrelu",
+            "opts": null,
+            "inputs": [
+                "B"
+            ],
+            "outputs": [
+                "G"
+            ],
+            "params": [
+                "w_G",
+                "b_G"
+            ]
+        },
+        {
+            "name": "cost",
+            "type": "quadcost",
+            "opts": null,
+            "inputs": [
+                "G",
+                "y"
+            ],
+            "outputs": [
+                "c"
+            ],
+            "params": null
+        }
+    ],
+    "train_val_test_ratios": [
+        0.70,
+        0.15,
+        0.15
+    ],
+    "number_of_samples": 20,
+    "learning_rate": 0.001,
+    "batch_size": 10,
+    "number_of_epochs": 50,
+    "number_of_val_fails": 10,
+    "device": "cpu"
+}
