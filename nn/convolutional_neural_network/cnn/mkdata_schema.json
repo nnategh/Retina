@@ -3,26 +3,43 @@
     "title": "JSON schema for 'DataUtils.mkdata' function",
     "description": "Configuration file for making 'db' from 'spk' and 'vstim'.[dataflow](./dataflow.vsdx)",
     "type": "object",
+    "required": [
+        "inputs",
+        "params",
+        "outputs"
+    ],
     "properties": {
         "inputs": {
             "type": "object",
+            "required": [
+                "path"
+            ],
             "properties": {
                 "path": {
-                    "type": "string",
-                    "description": "path of input file contains 'spk' and 'vstim'."
+                    "description": "path of input file contains 'spk' and 'vstim'",
+                    "type": "string"
                 }
             }
         },
         "params": {
             "type": "object",
+            "required": [
+                "dt",
+                "divide",
+                "psth",
+                "db"
+            ],
             "properties": {
                 "dt": {
-                    "type": "number",
-                    "description": "time resolution, in seconds."
+                    "description": "time resolution, in seconds.",
+                    "type": "number"
                 },
                 "divide": {
-                    "type": "object",
                     "description": "divide 'spk' or 'vstim' to sub-trials.",
+                    "type": "object",
+                    "required": [
+                        "trial_length"
+                    ],
                     "properties": {
                         "trial_length": {
                             "type": "number",
@@ -31,8 +48,12 @@
                     }
                 },
                 "psth": {
-                    "type": "object",
                     "description": "make 'psth' from spk trains.",
+                    "type": "object",
+                    "required": [
+                        "window_size",
+                        "kernel_size"
+                    ],
                     "properties": {
                         "window_size": {
                             "type": "number",
@@ -45,23 +66,28 @@
                     }
                 },
                 "db": {
-                    "type": "object",
                     "description": "extract samples from a continuous stimulus and response.",
+                    "type": "object",
+                    "required": [
+                        "output_size",
+                        "output_intersection",
+                        "kernel_sizes"
+                    ],
                     "properties": {
                         "output_size": {
-                            "type": "number",
-                            "description": "length of each output sample, in seconds."
+                            "description": "length of each output sample, in seconds.",
+                            "type": "number"
                         },
                         "output_intersection": {
-                            "type": "number",
-                            "description": "length of intersection between each two output samples, in seconds."
+                            "description": "length of intersection between each two output samples, in seconds.",
+                            "type": "number"
                         },
                         "kernel_sizes": {
+                            "description": "size of each kernel during a path from input to output, in seconds.",
                             "type": "array",
                             "items": {
                                 "type": "number"
-                            },
-                            "description": "size of each kernel during a path from input to output, in seconds."
+                            }
                         }
                     }
                 }
@@ -71,8 +97,8 @@
             "type": "object",
             "properties": {
                 "path": {
-                    "type": "string",
-                    "description": "path of output file."
+                    "description": "path of output file.",
+                    "type": "string"
                 }
             }
         }
