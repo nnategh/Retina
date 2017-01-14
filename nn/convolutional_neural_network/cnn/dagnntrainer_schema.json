@@ -1,0 +1,265 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "title": "JSON schema for props of 'DagNNTrainer' class",
+    "description": "Contains 'data', 'net' and 'learning' configuration",
+    "type": "object",
+    "required": [
+        "data",
+        "net",
+        "learning"
+    ],
+    "properties": {
+        "data": {
+            "description": "Path of 'db' and 'params' files and 'bak' directory",
+            "type": "object",
+            "required": [
+                "db_filename",
+                "params_filename",
+                "bak_dir"
+            ],
+            "properties": {
+                "db_filename": {
+                    "description": "Path of 'db' file",
+                    "type": "string"
+                },
+                "params_filename": {
+                    "description": "Path of 'params' file",
+                    "type": "string"
+                },
+                "bak_dir": {
+                    "description": "Path of 'bak' directory",
+                    "type": "string"
+                }
+            }
+        },
+        "net": {
+            "description": "Contains 'vars', 'params' and 'layers' of a 'DagNN' object",
+            "type": "object",
+            "required": [
+                "vars",
+                "params",
+                "layers"
+            ],
+            "properties": {
+                "vars": {
+                    "description": "Configuration of 'input', 'output', 'expected output' and 'cost' variables of the net",
+                    "type": "object",
+                    "required": [
+                        "input",
+                        "output",
+                        "expected_output",
+                        "cost"
+                    ],
+                    "properties": {
+                        "input": {
+                            "description": "Input variable of the net",
+                            "type": "object",
+                            "required": [
+                                "name",
+                                "size"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "description": "Name of input variable of the net",
+                                    "type": "string"
+                                },
+                                "size": {
+                                    "description": "Size of input variable of the net",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        },
+                        "output": {
+                            "description": "Output variable of the net",
+                            "type": "object",
+                            "required": [
+                                "name",
+                                "size"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "description": "Name of output variable of the net",
+                                    "type": "string"
+                                },
+                                "size": {
+                                    "description": "Size of output variable of the net",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        },
+                        "expected_output": {
+                            "description": "Expected output variable of the net",
+                            "type": "object",
+                            "required": [
+                                "name"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "description": "Name of expected output variable of the net",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "cost": {
+                            "description": "Cost variable of the net",
+                            "type": "object",
+                            "required": [
+                                "name"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "description": "Name of cost variable of the net",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "params": {
+                    "description": "Configuration of parameters of the net",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "name",
+                            "size"
+                        ],
+                        "properties": {
+                            "name": {
+                                "description": "Name of the parameter",
+                                "type": "string"
+                            },
+                            "size": {
+                                "description": "Size of the parameter",
+                                "type": "array",
+                                "items": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                },
+                "layers": {
+                    "description": "Configuratoin of the blocks of the net",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "name",
+                            "type",
+                            "inputs",
+                            "outputs",
+                            "params"
+                        ],
+                        "properties": {
+                            "name": {
+                                "description": "Name of the block",
+                                "type": "string"
+                            },
+                            "type": {
+                                "description": "Type of the block",
+                                "type": "string"
+                            },
+                            "inputs": {
+                                "description": "Name of input variables",
+                                "oneOf": [
+                                    {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "outputs": {
+                                "description": "Name of output variables",
+                                "oneOf": [
+                                    {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            },
+                            "params": {
+                                "description": "Name of parameters",
+                                "oneOf": [
+                                    {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "learning": {
+            "description": "Configuration of learning parameters",
+            "type": "object",
+            "required": [
+                "train_val_test_ratios",
+                "learning_rate",
+                "batch_size",
+                "number_of_epochs",
+                "number_of_val_fails",
+                "device"
+            ],
+            "properties": {
+                "train_val_test_ratios": {
+                    "description": "Ratios of 'training', 'validation' and 'test' for dividing data",
+                    "type": "array",
+                    "items": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                    },
+                    "maxItems": 3,
+                    "minItems": 3
+                },
+                "learning_rate": {
+                    "description": "Learning rate for gradiant-descend method",
+                    "type": "number"
+                },
+                "batch_size": {
+                    "description": "Size of each batch in stochastic-gradiant-descend",
+                    "type": "integer"
+                },
+                "number_of_epochs": {
+                    "description": "Number of epochs for termination condition",
+                    "type": "integer"
+                },
+                "number_of_val_fails": {
+                    "description": "Number of epochs that cost on validation data can be increased before termination",
+                    "type": "integer"
+                },
+                "device": {
+                    "description": "Set unit of processing between 'cpu' or 'gpu'",
+                    "enum": [
+                        "cpu",
+                        "gpu"
+                    ]
+                }
+            }
+        }
+    }
+}
