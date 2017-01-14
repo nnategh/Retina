@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "title": "JSON schema for 'DataUtils.mkdata' function",
+    "description": "Configuration file for making 'db' from 'spk' and 'vstim'.[dataflow](./dataflow.vsdx)",
+    "type": "object",
+    "properties": {
+        "inputs": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "path of input file contains 'spk' and 'vstim'."
+                }
+            }
+        },
+        "params": {
+            "type": "object",
+            "properties": {
+                "dt": {
+                    "type": "number",
+                    "description": "time resolution, in seconds."
+                },
+                "divide": {
+                    "type": "object",
+                    "description": "divide 'spk' or 'vstim' to sub-trials.",
+                    "properties": {
+                        "trial_length": {
+                            "type": "number",
+                            "description": "length of each trial, in seconds."
+                        }
+                    }
+                },
+                "psth": {
+                    "type": "object",
+                    "description": "make 'psth' from spk trains.",
+                    "properties": {
+                        "window_size": {
+                            "type": "number",
+                            "description": "length of the window of computing the psth, in seconds."
+                        },
+                        "kernel_size": {
+                            "type": "number",
+                            "description": "length of gaussian kernel for smoothing, in seconds."
+                        }
+                    }
+                },
+                "db": {
+                    "type": "object",
+                    "description": "extract samples from a continuous stimulus and response.",
+                    "properties": {
+                        "output_size": {
+                            "type": "number",
+                            "description": "length of each output sample, in seconds."
+                        },
+                        "output_intersection": {
+                            "type": "number",
+                            "description": "length of intersection between each two output samples, in seconds."
+                        },
+                        "kernel_sizes": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            },
+                            "description": "size of each kernel during a path from input to output, in seconds."
+                        }
+                    }
+                }
+            }
+        },
+        "outputs": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "path of output file."
+                }
+            }
+        }
+    }
+}
