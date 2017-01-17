@@ -24,72 +24,37 @@
         "params": {
             "type": "object",
             "required": [
-                "dt",
-                "divide",
-                "psth",
-                "db"
+                "dt_sec",
+                "trial_length_sec",
+                "window_size_sec",
+                "kernel_size_sec",
+                "sample_size_sec",
+                "sample_intersection_sec"
             ],
             "properties": {
-                "dt": {
+                "dt_sec": {
                     "description": "time resolution, in seconds.",
                     "type": "number"
                 },
-                "divide": {
-                    "description": "divide 'spk' or 'vstim' to sub-trials.",
-                    "type": "object",
-                    "required": [
-                        "trial_length"
-                    ],
-                    "properties": {
-                        "trial_length": {
-                            "type": "number",
-                            "description": "length of each trial, in seconds."
-                        }
-                    }
+                "trial_length_sec": {
+                    "description": "length of each trial, in seconds. for dividing 'spk' or 'vstim' to sub-trials.",
+                    "type": "number"
                 },
-                "psth": {
-                    "description": "make 'psth' from spk trains.",
-                    "type": "object",
-                    "required": [
-                        "window_size",
-                        "kernel_size"
-                    ],
-                    "properties": {
-                        "window_size": {
-                            "type": "number",
-                            "description": "length of the window of computing the psth, in seconds."
-                        },
-                        "kernel_size": {
-                            "type": "number",
-                            "description": "length of gaussian kernel for smoothing, in seconds."
-                        }
-                    }
+                "window_size_sec": {
+                    "description": "length of the window of computing the psth, in seconds.",
+                    "type": "number"
                 },
-                "db": {
-                    "description": "extract samples from a continuous stimulus and response.",
-                    "type": "object",
-                    "required": [
-                        "output_size",
-                        "output_intersection",
-                        "kernel_sizes"
-                    ],
-                    "properties": {
-                        "output_size": {
-                            "description": "length of each output sample, in seconds.",
-                            "type": "number"
-                        },
-                        "output_intersection": {
-                            "description": "length of intersection between each two output samples, in seconds.",
-                            "type": "number"
-                        },
-                        "kernel_sizes": {
-                            "description": "size of each kernel during a path from input to output, in seconds.",
-                            "type": "array",
-                            "items": {
-                                "type": "number"
-                            }
-                        }
-                    }
+                "kernel_size_sec": {
+                    "description": "length of gaussian kernel for smoothing psth, in seconds.",
+                    "type": "number"
+                },
+                "sample_size_sec": {
+                    "description": "length of each input/output sample, in seconds.",
+                    "type": "number"
+                },
+                "sample_intersection_sec": {
+                    "description": "length of intersection between each two input/output samples, in seconds.",
+                    "type": "number"
                 }
             }
         },
