@@ -3,10 +3,10 @@ close('all');
 clear();
 clc();
 
-run('D:\PhD\MSU\codes\matconvnet\matconvnet-1.0-beta23\matlab\vl_setupnn.m');
+run('vl_setupnn.m');
 
 %% Properties
-props_filename = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\fig4.2\fig4.2.json';
+props_filename = './data/ep20c11/fig4.2/fig4.2.json';
 cnn = DagNNTrainer(props_filename);
 
 %% Make random data
