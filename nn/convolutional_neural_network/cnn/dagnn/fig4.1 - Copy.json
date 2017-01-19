@@ -1,7 +1,4 @@
 {
-    "db_filename": "./data/ep20c1/40/db.mat",
-    "params_filename": "./data/ep20c1/40/params.mat",
-    "bak_dir": "./data/ep20c1/40/bak",
     "vars": {
         "input": {
             "name": "x",
@@ -28,8 +25,8 @@
         {
             "name": "w_B",
             "size": [
-                1,
-                40
+                4,
+                4
             ]
         },
         {
@@ -41,8 +38,8 @@
         {
             "name": "w_G",
             "size": [
-                1,
-                40
+                4,
+                4
             ]
         },
         {

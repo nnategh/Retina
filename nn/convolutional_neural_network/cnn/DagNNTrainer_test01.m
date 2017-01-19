@@ -3,14 +3,17 @@ close('all');
 clear();
 clc();
 
-% run('D:\PhD\MSU\codes\matconvnet\matconvnet-1.0-beta23\matlab\vl_setupnn.m');
+run('D:\PhD\MSU\codes\matconvnet\matconvnet-1.0-beta23\matlab\vl_setupnn.m');
 
 %% Properties
-dagnn_filename = './dagnn/fig4.1.json';
-db_filename = './data/db1.mat';
+props_filename = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\fig4.2\fig4.2.json';
+cnn = DagNNTrainer(props_filename);
+
+%% Make random data
+% cnn.make_random_data(100);
 
 %% Net
-cnn = DagNNTrainer(dagnn_filename, db_filename);
+% cnn.init();
 cnn.run();
 
 %% Results
@@ -33,4 +36,4 @@ cnn.plot_costs();
 
 %% Plot digraph
 figure();
-DagNNTrainer.plot_digraph(dagnn_filename);
+DagNNTrainer.plot_digraph(props_filename);

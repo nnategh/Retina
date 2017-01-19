@@ -1,0 +1,27 @@
+{
+    "$schema": "https://raw.githubusercontent.com/nnategh/Retina/master/nn/convolutional_neural_network/cnn/mkdata_schema.json",
+    "inputs": {
+        "path": "./makedata_repeated_selected_ep20c1.mat"
+    },
+    "params": {
+        "dt": 0.001,
+        "divide": {
+            "trial_length": 100
+        },
+        "psth": {
+            "window_size": 0.005,
+            "kernel_size": 0.1
+        },
+        "db": {
+            "output_size": 0.100,
+            "output_intersection": 0.080,
+            "kernel_sizes": [
+                0.02,
+                0.02
+            ]
+        }
+    },
+    "outputs": {
+        "path": "./db.mat"
+    }
+}

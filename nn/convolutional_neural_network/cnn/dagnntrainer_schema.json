@@ -218,6 +218,8 @@
             "type": "object",
             "required": [
                 "train_val_test_ratios",
+                "standardize_x",
+                "standardize_y",
                 "learning_rate",
                 "batch_size",
                 "number_of_epochs",
@@ -235,6 +237,14 @@
                     },
                     "maxItems": 3,
                     "minItems": 3
+                },
+                "standardize_x": {
+                    "description": "make input-data zero-mean and unit-variance",
+                    "type": "boolean"
+                },
+                "standardize_y": {
+                    "description": "make output-data zero-mean and unit-variance",
+                    "type": "boolean"
                 },
                 "learning_rate": {
                     "description": "Learning rate for gradiant-descend method",

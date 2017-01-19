@@ -7,6 +7,9 @@ classdef DagNNViz < handle
     methods
     end
     
+    properties (Constant)
+    end
+    
     methods (Static)
         function plot_allinone(ax, x)
             % PLOT_ALLINONE plots all data in one figure
@@ -152,13 +155,20 @@ classdef DagNNViz < handle
             title('Mean');
         end
         
-        function plot_all(x)
+        function plot_all(x, red_index)
             % PLOT_ALL plot all samples in square grid
             %
             % Parameters
             % ----------
             % - x: cell array
             %   input data
+            % - red_index: int (default = 0)
+            %   index of 'red' sample
+            
+            % default values
+            if nargin < 2
+                red_index = 0;
+            end
             
             % number of samples
             N = length(x);
@@ -172,13 +182,18 @@ classdef DagNNViz < handle
             % plot
             for i = 1 : N
                 subplot(rows, cols, i);
-                plot(x{i});
+                h = plot(x{i});
                 set(gca, ...
                     'XTick', [], ...
                     'XColor', 'white', ...
                     'YTick', [], ...
                     'YColor', 'white' ...
                 );
+                
+                % red sample
+                if i == red_index
+                   set(h, 'Color', 'red'); 
+                end
             end
             suptitle(sprintf('%d Samples', N));
         end
@@ -694,6 +709,260 @@ classdef DagNNViz < handle
             % save
             save(fullfile(cnn.props.data.bak_dir, 'y_.mat'), 'y_');
         end
+        
+        function plot_spike_trains( spike_trains, number_of_time_ticks, time_limits)
+            %PLOT_SPIKE_TRAIN plots spike train
+            %   Parameters
+            %   ----------
+            %   - spike_train : double array
+            %   - number_of_time_ticks: int (default = 2)
+            %   - time_limits : [double, double] (default = [1, length of each trial]) 
+            %       [min_time, max_time]
+
+            % default parameters
+            switch nargin
+                case 1
+                    number_of_time_ticks = 2;
+                    time_limits = [1, size(spike_trains, 2)];
+                case 2
+                    time_limits = [1, size(spike_trains, 2)];
+            end
+            
+            hold('on');
+            
+            % first baseline
+            baseline = 0;
+            % number of trails
+            N = size(spike_trains, 1);
+            % length of spike train
+            T = size(spike_trains, 2);
+            % time axis
+            time = linspace(time_limits(1), time_limits(2), T);
+            
+            % plot spike train
+            for trial_index = 1 : N
+                for time_index = 1 : T
+                    if spike_trains(trial_index, time_index) > 0
+                        plot(...
+                            [time(time_index), time(time_index)], ...
+                            [baseline, baseline + 1], ...
+                            'Color', 'blue' ...
+                            );
+                    end
+                end
+                
+                baseline = baseline + 1.5;
+            end
+            
+            hold('off');
+            % set trial-axis limits
+            ylim([-0.5, baseline]);
+            % set time-axis label
+            xlabel('Time(s)');
+            % set trial-axis label
+            ylabel('Trail');
+            % remove trial-axis ticks
+            set(gca, ...
+                'XTick', linspace(time_limits(1), time_limits(2), number_of_time_ticks), ...
+                'YTick', [] ...
+                );
+        end
+        
+        function spks = get_spks(experimets_dir)
+            % GET_SPKS gets 'spk' data from saved 'experiment' files in
+            % 'experiments_dir' directory
+            %
+            % Parameters
+            % ----------
+            % - experiments_dir: char vector
+            %   path of saved 'experiments' files
+            %
+            % Returns
+            % -------
+            % - spks: struct('value', double array, 'name', char vector)
+            % array
+            %   contains 'spk' data
+            
+            % experiment files
+            ep_files = dir(fullfile(experimets_dir, '*.mat'));
+            ep_files = {ep_files.name};
+            
+            % number of experiments
+            N = length(ep_files);
+            
+            % spks
+            spks = [];
+            for i = 1 : N
+                spks(i).value = getfield(...
+                    load(fullfile(experimets_dir, ep_files{i})), ...
+                    'spk' ...
+                );
+                spks(i).name = ep_files{i};
+            end
+        end
+        
+        function plot_spks(experimets_dir)
+            % PLOT_SPKS plots 'spk' data from saved 'experiment' files in
+            % 'experiments_dir' directory
+            %
+            % Parameters
+            % ----------
+            % - experiments_dir: char vector
+            %   path of saved 'experiments' files
+            
+            % spks
+            spks = DagNNViz.get_spks(experimets_dir);
+            % number of elements
+            N = length(spks);
+            % add number_of_spiks field
+            for i = 1 : N
+                spks(i).number_of_spiks = sum(spks(i).value);
+            end
+            % convert to table
+            T = struct2table(spks);
+            % sort table based on 'number_of_spiks' columns
+            T = sortrows(T, 'number_of_spiks', 'descend');
+            
+            % subplot grid
+            % - rows
+            rows = ceil(sqrt(N));
+            % - cols
+            cols = rows;
+            
+            % plot
+            for i = 1 : N
+                subplot(rows, cols, i);
+                DagNNViz.plot_spike_trains(T{i, 'value'});
+                
+                % - title (number of spikes)
+                title(...
+                    sprintf(...
+                        '%d Spikes\n%s', ...
+                        T{i, 'number_of_spiks'} ...
+                    ) ...
+                );
+                
+                xlabel('');
+                ylabel(...
+                    char(...
+                        regexp(...
+                            char(T{i, 'name'}), ...
+                            'c\d+', ...
+                            'match' ...
+                        ) ...
+                    ) ...
+                );
+                
+                set(gca, ...
+                    'XTick', [], ...
+                    'YTick', [] ...
+                );
+            end
+            
+        end
+        
+        function param = analyze_param_name(param_name)
+            titles = struct(...
+                'B', 'Bipolar', ...
+                'A', 'Amacrine', ...
+                'G', 'Ganglion' ...
+            );
+        
+            param.is_bias = (param_name(1) == 'b');
+            param.title = titles.(param_name(3));
+        end
+        
+        function plot_params()
+            % PLOT_PARAMS plots and save parameters in 'params.mat' file
+            
+            % Parameters
+            % - 'params.mat' file path
+            params_filename = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/params.mat';
+            % - 'bak' directory path
+            bak_dir = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/fig4.2/bak_200_0.0001';
+            % - prameter names
+            param_names = {'w_B', 'w_A', 'w_G', 'b_B', 'b_A', 'b_G'};
+            
+            
+            % result directory
+            % - path
+            result_dir = fullfile(bak_dir, 'results');
+            % - make
+            if ~exist(result_dir, 'dir')
+                mkdir(result_dir);
+            end
+            
+            % costs
+            % - load
+            costs = getfield(...
+                load(fullfile(bak_dir, 'costs')), ...
+                'costs' ...
+            );
+            % - bets validation index
+            [~, best_val_index] = min(costs.val);
+            
+            % plot and save
+            for i = 1 : length(param_names)
+                % new figure
+                h = figure(...
+                    'Name', 'Parameters', ...
+                    'NumberTitle', 'off', ...
+                    'Units', 'normalized', ...
+                    'OuterPosition', [0, 0, 1, 1] ...
+                );
+                % param
+                % param.isbias, param.title
+                param = DagNNViz.analyze_param_name(param_names{i});
+                % param.value
+                param.value = ...
+                    DagNNViz.get_param_history(bak_dir, (param_names{i}));
+                
+                % if parameter is a bias
+                if param.is_bias
+                    param.value = [param.value{:}];
+                    plot(param.value);
+                    hold('on');
+                    plot(best_val_index, param.value(best_val_index), ...
+                        'Color', 'red', ...
+                        'Marker', '*', ...
+                        'MarkerSize', 10, ...
+                        'LineWidth', 2 ...
+                    );
+                    title(param.title);
+                    xlabel('epoch');
+                    ylabel('bias');
+                    
+                    % save
+                    imwrite(...
+                        frame2im(getframe(h)), ...
+                        fullfile(...
+                            result_dir, ...
+                            ['bias_', lower(param.title), '.png'] ...
+                        ), ...
+                        'png' ...
+                    );
+                else % if parameter is a filter
+                    DagNNViz.plot_all(param.value, best_val_index);
+                    suptitle(...
+                        sprintf(...
+                            'Filter of %s (%d epochs)', ...
+                            param.title, ...
+                            length(param.value) ...
+                        ) ...
+                    );
+                
+                    % save
+                    imwrite(...
+                        frame2im(getframe(h)), ...
+                        fullfile(...
+                            result_dir, ...
+                            ['filter_', lower(param.title), '.png'] ...
+                        ), ...
+                        'png' ...
+                    );
+                end
+            end
+            
+        end
     end
-    
 end

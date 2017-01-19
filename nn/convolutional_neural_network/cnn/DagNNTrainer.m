@@ -96,8 +96,57 @@ classdef DagNNTrainer < handle
         function init_db(obj)
             % INIT_DB initialzes 'db' from the 'db_filename'
             
-            % load db
+            % db
+            % - load
             obj.db = getfield(load(obj.props.data.db_filename), 'db');
+            % - standardize
+            obj.standardize_db();
+            % - resize
+            obj.resize_db();
+        end
+        
+        function standardize_db(obj)
+            % STANDARDIZE_DB makes db zero-mean and unit-variance
+            
+            % db
+            % - x
+            if obj.props.learning.standardize_x
+                for i = 1 : length(obj.db.x)
+                    mu = mean(obj.db.x{i}(:));
+                    sigma = std(obj.db.x{i}(:));
+                    if sigma == 0
+                        sigma = 1;
+                    end
+                    obj.db.x{i} = (obj.db.x{i} - mu) / sigma;
+                end
+            end
+            % - y
+            if obj.props.learning.standardize_y
+                for i = 1 : length(obj.db.y)
+                    mu = mean(obj.db.y{i}(:));
+                    sigma = std(obj.db.y{i}(:));
+                    if sigma == 0
+                        sigma = 1;
+                    end
+                    obj.db.y{i} = (obj.db.y{i} - mu) / sigma;
+                end
+            end
+        end
+        
+        function resize_db(obj)
+            % RESIZE_DB resizes 'db.x' and 'db.y'
+            
+            % resize
+            % - db.x
+            input_size = obj.props.net.vars.input.size;
+            for i = 1 : length(obj.db.x)
+                obj.db.x{i} = DataUtils.resize(obj.db.x{i}, input_size);
+            end
+            % - db.y
+            output_size = obj.props.net.vars.output.size;
+            for i = 1 : length(obj.db.y)
+                obj.db.y{i} = DataUtils.resize(obj.db.y{i}, output_size);
+            end
         end
         
         function init_bak_dir(obj)
@@ -239,31 +288,13 @@ classdef DagNNTrainer < handle
         
         function init_meta(obj)
             % INIT_META set obj.net.meta
-            % meta = struct(...
-            %       'input_name', string, ...
-            %       'output_name', string, ...
-            %       'expected_output_name', string, ...
-            %       'cost_name', string, ...
-            %       'train_val_test_ratios', [double, double, double], ...
-            %       'number_of_samples', int, ...
-            %       'learning_rate': double, ...
-            %       'batch_size': int, ...
-            %       'number_of_epochs': int, ...
-            %       'number_of_val_fails': int, ...
-            % )
             
-            obj.net.meta = struct(...
-                'input_name', obj.props.vars.input.name, ...
-                'output_name', obj.props.vars.output.name, ...
-                'expected_output_name', obj.props.vars.expected_output.name, ...
-                'cost_name', obj.props.vars.cost.name, ...
-                'train_val_test_ratios', obj.props.train_val_test_ratios, ...
-                'number_of_samples', obj.props.number_of_samples, ...
-                'learning_rate', obj.props.learning_rate, ...
-                'batch_size', obj.props.batch_size, ...
-                'number_of_epochs', obj.props.number_of_epochs, ...
-                'number_of_val_fails', obj.props.number_of_val_fails ...
-                );
+%             obj.net.meta = struct(...
+%                 'learning_rate', obj.props.learning.learning_rate, ...
+%                 'batch_size', obj.props.learning.batch_size ...
+%             );
+
+            obj.net.meta.learning = obj.props.learning;
         end
         
         function cost = get_cost(obj, x, y)
@@ -371,6 +402,9 @@ classdef DagNNTrainer < handle
             % net
             obj.init_net();
             
+            % - meta
+            obj.init_meta();
+            
             % data
             obj.init_data();
             
@@ -382,7 +416,8 @@ classdef DagNNTrainer < handle
         end
         
         function y = out(obj, x)
-            % OUT computes output of network based on given input
+            % OUT computes estimated-outputs of network based on given
+            % inputs
             %
             % Parameters
             % ----------
@@ -421,7 +456,7 @@ classdef DagNNTrainer < handle
             batch_size = obj.props.learning.batch_size;
             
             % epoch loop
-            while obj.current_epoch <= obj.props.learning.number_of_epochs
+            while obj.current_epoch <= obj.props.learning.number_of_epochs + 1
                 begin_time = cputime();
                 % shuffle train data
                 permuted_indexes = randperm(n);
@@ -499,9 +534,17 @@ classdef DagNNTrainer < handle
                 
                 % increament current epoch
                 obj.current_epoch = obj.current_epoch + 1;
-            end
+            end 
+        end
+        
+        function load_best_val_epoch(obj)
+            % LOAD_BEST_VAL_EPOCH loads best validation performance saved
+            % epoch
             
-            % todo: load best validation performance
+            % update current-epoch
+            [~, obj.current_epoch] = min(obj.costs.val);
+            % init-net
+            obj.init_net();
         end
         
         function print_epoch_progress(obj)
