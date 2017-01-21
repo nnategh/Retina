@@ -3,12 +3,12 @@ classdef Neda < handle
     %   Detailed explanation goes here
     
     properties (Constant)
-        exp_filename = 'C:\Users\YaZa\Dropbox\Neda\retina\CNN\Data\uniform field stimuli\exp 20\mat files\makedata_repeated_selected_ep20c11';
+        exp_filename = 'C:\Users\Yasin\Dropbox\Neda\retina\CNN\Data\uniform field stimuli\exp 20\mat files\makedata_repeated_selected_ep20c11';
         dt_sec = 0.001;
         l_sec = 1.000;
         d_sec = 0.100;
         refresh_rate = 13;
-        output_dir = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11';
+        output_dir = './data/ep20c11';
     end
     
     methods (Static)
@@ -154,7 +154,19 @@ classdef Neda < handle
             db.x = num2cell(resized_stims', 1)';
             db.y = num2cell(resized_resps', 1)';
             % - save
-            save(fullfile(output_dir, 'db.mat'), 'db');            
+            save(...
+                fullfile(output_dir, 'db.mat'), ...
+                '-struct', ...
+            'db');
+            
+            % save data
+            save(...
+                fullfile(output_dir, 'data.mat'), ...
+                'stim', ...
+                'resp', ...
+                'stims', ...
+                'resps' ...
+            );
         end
         
         function save_params(exp_filename, refresh_rate, output_dir)
