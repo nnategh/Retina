@@ -98,7 +98,7 @@ classdef DagNNTrainer < handle
             
             % db
             % - load
-            obj.db = getfield(load(obj.props.data.db_filename), 'db');
+            obj.db = load(obj.props.data.db_filename);
             % - standardize
             obj.standardize_db();
             % - resize
@@ -705,6 +705,7 @@ classdef DagNNTrainer < handle
             
             save(...
                 obj.get_costs_filename(), ...
+                '-struct', ...
                 'costs' ...
                 );
             
@@ -714,10 +715,7 @@ classdef DagNNTrainer < handle
         function load_costs(obj)
             % LOAD_COSTS loads 'costs.mat' from 'bak' directory
             
-            obj.costs = getfield(...
-                load(obj.get_costs_filename()), ...
-                'costs' ...
-                );
+            obj.costs = load(obj.get_costs_filename());
         end
         
         function filename = get_db_indexes_filename(obj)

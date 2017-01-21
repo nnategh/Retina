@@ -8,6 +8,9 @@ classdef DagNNViz < handle
     end
     
     properties (Constant)
+        bak_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\fig4.2\bak_200_0.0001';
+        data_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11';
+        formattype = 'png';
     end
     
     methods (Static)
@@ -47,6 +50,45 @@ classdef DagNNViz < handle
             hold('off');
         end
 
+        function plot_populationmean(ax, x)
+            % PLOT_POPULATIONMEAN plots mean of population
+            %
+            % Parameters
+            % ----------
+            % - x: cell array
+            %   input data
+            % - ax: Axes
+            %   axes handle
+            
+            if nargin == 1
+                % replace 'x' with 'ax'
+                x = ax;
+                
+                % figure
+                figure(...
+                    'Name', 'Population Mean', ...
+                    'NumberTitle', 'off', ...
+                    'Units', 'normalized', ...
+                    'OuterPosition', [0, 0, 1, 1] ...
+                );
+                ax = gca;
+            end
+            
+            % number of samples
+            N = length(x);
+            
+            % population mean
+            pm = x{1};
+            for i = 2 : N
+                pm = pm + x{i};
+            end
+            
+            pm = pm / N;
+            
+            plot(ax, pm);
+            title('Mean');
+        end
+        
         function plot_summary(x)
             % PLOT_SUMMARY plots all data in one figure
             %
@@ -116,45 +158,6 @@ classdef DagNNViz < handle
             ); 
         end
         
-        function plot_populationmean(ax, x)
-            % PLOT_POPULATIONMEAN plots mean of population
-            %
-            % Parameters
-            % ----------
-            % - x: cell array
-            %   input data
-            % - ax: Axes
-            %   axes handle
-            
-            if nargin == 1
-                % replace 'x' with 'ax'
-                x = ax;
-                
-                % figure
-                figure(...
-                    'Name', 'Population Mean', ...
-                    'NumberTitle', 'off', ...
-                    'Units', 'normalized', ...
-                    'OuterPosition', [0, 0, 1, 1] ...
-                );
-                ax = gca;
-            end
-            
-            % number of samples
-            N = length(x);
-            
-            % population mean
-            pm = x{1};
-            for i = 2 : N
-                pm = pm + x{i};
-            end
-            
-            pm = pm / N;
-            
-            plot(ax, pm);
-            title('Mean');
-        end
-        
         function plot_all(x, red_index)
             % PLOT_ALL plot all samples in square grid
             %
@@ -180,7 +183,32 @@ classdef DagNNViz < handle
             cols = rows;
             
             % plot
-            for i = 1 : N
+            fontsize = 7;
+            % - first sample
+            i = 1;
+            % print progress
+            fprintf('Sample %d / %d\n', i, N);
+
+            subplot(rows, cols, i);
+            h = plot(x{i});
+            set(gca, ...
+                'XTick', [], ...
+                'XColor', 'white', ...
+                'YTick', [], ...
+                'YColor', 'white' ...
+            );
+            xlabel('Time (s)', 'FontSize', fontsize);
+
+            % red sample
+            if i == red_index
+               set(h, 'Color', 'red'); 
+            end
+            
+            % - other samples
+            for i = 2 : N
+                % print progress
+                fprintf('Sample %d / %d\n', i, N);
+                
                 subplot(rows, cols, i);
                 h = plot(x{i});
                 set(gca, ...
@@ -198,16 +226,100 @@ classdef DagNNViz < handle
             suptitle(sprintf('%d Samples', N));
         end
         
-        function plot_db_all(db)
+        function plot_filter_history(x, red_index)
+            % PLOT_ALL plot all samples in square grid
+            %
+            % Parameters
+            % ----------
+            % - x: cell array
+            %   input data
+            % - red_index: int (default = 0)
+            %   index of 'red' sample
+            
+            % default values
+            if nargin < 2
+                red_index = 0;
+            end
+            
+            % number of samples
+            N = length(x);
+            
+            % subplot grid
+            % - rows
+            rows = ceil(sqrt(N));
+            % - cols
+            cols = rows;
+            
+            % plot
+            fontsize = 7;
+            % - first sample
+            i = 1;
+            % print progress
+            fprintf('Sample %d / %d\n', i, N);
+
+            subplot(rows, cols, i);
+            h = plot(x{i});
+            set(gca, ...
+                'XTick', [], ...
+                'YTick', [] ...
+            );
+            box('off');
+            xlabel('Time (s)', 'FontSize', fontsize);
+
+            % red sample
+            if i == red_index
+               set(h, 'Color', 'red'); 
+            end
+            
+            % - other samples
+            for i = 2 : N
+                % print progress
+                fprintf('Sample %d / %d\n', i, N);
+                
+                subplot(rows, cols, i);
+                h = plot(x{i});
+                set(gca, ...
+                    'XTick', [], ...
+                    'YTick', [] ...
+                );
+                box('off');
+                
+                % red sample
+                if i == red_index
+                   set(h, 'Color', 'red'); 
+                end
+            end
+            suptitle(sprintf('%d Samples', N));
+        end
+        
+        function plot_db_all(db, output_dir, formattype, small_db_size)
             % PLOT_DB_ALL plot all input/output samples in square grid
             %
             % Parameters
             % ----------
             % - db: struct('x', cell array, 'y', cell array)
             %   input database
+            % - output_dir: char vector
+            %   path of output directory
+            % - formattype: char vector
+            %   file format such as 'pdf', 'svg', 'png' or ...
+            % - small_db_size: int (default = 50)
+            %   select first samples from db
             
+            % figure
+            figure(...
+                'Name', 'DB', ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0, 0, 1, 1] ...
+            );
+        
+            % small db
+            small_db.x = db.x(1:small_db_size);
+            small_db.y = db.y(1:small_db_size);
+        
             % number of samples
-            N = min(length(db.x), length(db.y));
+            N = small_db_size;
             
             % subplot grid
             % - rows
@@ -220,30 +332,74 @@ classdef DagNNViz < handle
             end
             
             % plot
-            for i = 1 : 2 : (2 * N)
+            N2 = 2 * N;
+            i = 1;
+            % first input/output pair
+            fontsize = 7;
+            fprintf('Sample %d / %d\n', 1, N2);
+            % - sample index
+            j = floor((i + 1) / 2);
+            % - input
+            subplot(rows, cols, i);
+            plot(small_db.x{j}, 'Color', 'blue');
+            title('Stimulus', 'FontSize', fontsize + 2);
+            xlabel('Time (s)', 'FontSize', fontsize);
+            ylabel('Intensity', 'FontSize', fontsize);
+            set(gca, ...
+                'XTick', [], ...
+                'YTick', [] ...
+            );
+            box('off');
+            % - output
+            subplot(rows, cols, i + 1);
+            plot(small_db.y{j}, 'Color', 'red');
+            title('Response', 'FontSize', fontsize + 2);
+            xlabel('Time (s)', 'FontSize', fontsize);
+            ylabel('Rate (Hz)', 'FontSize', fontsize);
+            set(gca, ...
+                'XTick', [], ...
+                'YTick', [] ...
+            );
+            box('off');
+            % - other samples
+            for i = 3 : 2 : N2
+                % print progress
+                fprintf('Sample %d / %d\n', i, N2);
                 % - sample index
                 j = floor((i + 1) / 2);
                 % - input
                 subplot(rows, cols, i);
-                plot(db.x{j}, 'Color', 'blue');
+                plot(small_db.x{j}, 'Color', 'blue');
                 set(gca, ...
                     'XTick', [], ...
                     'XColor', 'white', ...
                     'YTick', [], ...
                     'YColor', 'white' ...
                 );
+                box('off');
             
-                % - input
+                % - output
                 subplot(rows, cols, i + 1);
-                plot(db.y{j}, 'Color', 'red');
+                plot(small_db.y{j}, 'Color', 'red');
                 set(gca, ...
                     'XTick', [], ...
                     'XColor', 'white', ...
                     'YTick', [], ...
                     'YColor', 'white' ...
                 );
+                box('off');
             end
-            suptitle(sprintf('%d Samples', N));
+            % super-title
+            suptitle(...
+                sprintf(...
+                    'First %d Samples of %d (Stimulous/Response) Pairs of Training Dataset', ...
+                    length(small_db.x), ...
+                    length(db.x) ...
+                ) ...
+            );
+        
+            % save
+            saveas(gcf, fullfile(output_dir, ['db.' formattype]), formattype);
         end
         
         function plot_db_yhat_all(db, y_)
@@ -328,7 +484,7 @@ classdef DagNNViz < handle
             
             % plot
             plot(param_history);
-            xlabel('epoch'), ylabel('bias'), title(title_txt);
+            xlabel('Epoch'), ylabel('Bias'), title(title_txt);
             
         end
         
@@ -872,39 +1028,31 @@ classdef DagNNViz < handle
             param.title = titles.(param_name(3));
         end
         
-        function plot_params()
+        function plot_params(bak_dir, output_dir, formattype)
             % PLOT_PARAMS plots and save parameters in 'params.mat' file
-            
+            %
             % Parameters
-            % - 'params.mat' file path
-            params_filename = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/params.mat';
-            % - 'bak' directory path
-            bak_dir = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/fig4.2/bak_200_0.0001';
+            % - bak_dir: char vector
+            %   path of directory of saved epochs
+            % - output_dir: char vector
+            %   path of output directory
+            % - formattype: char vector
+            %   file format such as 'pdf', 'svg', 'png' or ...
+            
             % - prameter names
             param_names = {'w_B', 'w_A', 'w_G', 'b_B', 'b_A', 'b_G'};
             
-            
-            % result directory
-            % - path
-            result_dir = fullfile(bak_dir, 'results');
-            % - make
-            if ~exist(result_dir, 'dir')
-                mkdir(result_dir);
-            end
-            
             % costs
             % - load
-            costs = getfield(...
-                load(fullfile(bak_dir, 'costs')), ...
-                'costs' ...
-            );
+            costs = load(fullfile(bak_dir, 'costs'));
             % - bets validation index
-            [~, best_val_index] = min(costs.val);
+            [~, index_min_val_cost] = min(costs.val);
             
             % plot and save
+            round_digits = 2;
             for i = 1 : length(param_names)
                 % new figure
-                h = figure(...
+                figure(...
                     'Name', 'Parameters', ...
                     'NumberTitle', 'off', ...
                     'Units', 'normalized', ...
@@ -920,29 +1068,52 @@ classdef DagNNViz < handle
                 % if parameter is a bias
                 if param.is_bias
                     param.value = [param.value{:}];
+                    epochs = 0 : (length(param.value) - 1);
                     plot(param.value);
                     hold('on');
-                    plot(best_val_index, param.value(best_val_index), ...
+                    plot(...
+                        index_min_val_cost - 1, ...
+                        round(param.value(index_min_val_cost), round_digits), ...
                         'Color', 'red', ...
                         'Marker', '*', ...
-                        'MarkerSize', 10, ...
+                        'MarkerSize', 3, ...
                         'LineWidth', 2 ...
                     );
+                    grid('on');
+                    box('off');
                     title(param.title);
-                    xlabel('epoch');
-                    ylabel('bias');
+                    xlabel('Epoch');
+                    ylabel('Bias');
+                    
+                    % ticks
+                    % - x
+                    set(gca, ...
+                        'XTick', unique([0, index_min_val_cost - 1, epochs(end)]) ...
+                    );
+                    % - y
+                    set(gca, ...
+                        'YTick', ...
+                        unique([...
+                            round(min(param.value), round_digits), ...
+                            round(param.value(index_min_val_cost), round_digits), ...
+                            round(max(param.value), round_digits) ...
+                        ]) ...
+                    );
                     
                     % save
-                    imwrite(...
-                        frame2im(getframe(h)), ...
+                    saveas(...
+                        gcf, ...
                         fullfile(...
-                            result_dir, ...
-                            ['bias_', lower(param.title), '.png'] ...
+                            output_dir, ...
+                            ['bias_', lower(param.title), '.', formattype] ...
                         ), ...
-                        'png' ...
+                        formattype ...
                     );
-                else % if parameter is a filter
-                    DagNNViz.plot_all(param.value, best_val_index);
+                
+                % if parameter is a filter
+                else
+                    DagNNViz.plot_filter_history(param.value, index_min_val_cost);
+                    box('off');
                     suptitle(...
                         sprintf(...
                             'Filter of %s (%d epochs)', ...
@@ -952,17 +1123,271 @@ classdef DagNNViz < handle
                     );
                 
                     % save
-                    imwrite(...
-                        frame2im(getframe(h)), ...
+                    saveas(...
+                        gcf, ...
                         fullfile(...
-                            result_dir, ...
-                            ['filter_', lower(param.title), '.png'] ...
+                            output_dir, ...
+                            ['filter_', lower(param.title), '.', formattype] ...
                         ), ...
-                        'png' ...
+                        formattype ...
                     );
                 end
             end
             
+        end
+        
+        function plot_stim(stim, dt_sec, output_dir, formattype)
+            % PLOT_STIM plots stimulous
+            %
+            % Parameters
+            % ----------
+            % - stim: double vector
+            %   stimulus
+            % - dt_sect: double
+            %   time resolution in second
+            % - output_dir: char vector
+            %   path of output directory
+            % - formattype: char vector
+            %   file format such as 'pdf', 'svg', 'png' or ...
+            
+            % default values
+            if nargin < 4
+                formattype = 'svg';
+            end
+            
+            time = (1 : length(stim)) * dt_sec;
+            
+            % figure
+            figure(...
+                'Name', 'STIM', ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0.25, 0.25, 0.5, 0.5] ...
+            );
+            % plot
+            plot(time, stim);
+            % - title
+            title('Stimulus');
+            % - label
+            %   - x
+            xlabel('Time (s)');
+            %   - y
+            ylabel('Intensity');
+            % - ticks
+            %   - x
+            set(gca, ...
+                'XTick', [0, round(time(end), 1)] ...
+            );
+            %   - y
+            set(gca, ...
+                'YTick', unique([round(min(stim), 1), 0, round(max(stim), 1)]) ...
+            );
+            % - grid
+            grid('on');
+            
+            % save
+            saveas(gcf, fullfile(output_dir, ['stim.' formattype]), formattype);
+        end
+        
+        function plot_resp(resp, dt_sec, output_dir, formattype)
+            % PLOT_STIM plots response
+            %
+            % Parameters
+            % ----------
+            % - stim: double vector
+            %   stimulus
+            % - dt_sect: double
+            %   time resolution in second
+            % - output_dir: char vector
+            %   path of output directory
+            % - formattype: char vector
+            %   file format such as 'pdf', 'svg', 'png' or ...
+            
+            % default values
+            if nargin < 4
+                formattype = 'svg';
+            end
+            
+            time = (1 : length(resp)) * dt_sec;
+            
+            % figure
+            figure(...
+                'Name', 'RESP', ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0.25, 0.25, 0.5, 0.5] ...
+            );
+            % plot
+            plot(time, resp);
+            % - title
+            title('PSTH');
+            % - label
+            %   - x
+            xlabel('Time (s)');
+            %   - y
+            ylabel('Firing Rate (Hz)');
+            % - ticks
+            %   - x
+            set(gca, ...
+                'XTick', [0, round(time(end), 1)] ...
+            );
+            %   - y
+            set(gca, ...
+                'YTick', unique([round(min(resp), 1), round(max(resp), 1)]) ...
+            );
+            % - grid
+            grid('on');
+            
+            % save
+            saveas(gcf, fullfile(output_dir, ['resp.' formattype]), formattype);
+        end
+        
+        function plot_data()
+            output_dir = Neda.output_dir;
+            dt_sec = Neda.dt_sec;
+            formattype = 'png';
+            % data
+            data = load(fullfile(output_dir, 'data.mat'));
+            % - stim
+            stim = data.stim;
+            DagNNViz.plot_stim(stim, dt_sec, output_dir, formattype);
+            % - resp
+            resp = data.resp;
+            DagNNViz.plot_resp(resp, dt_sec, output_dir, formattype);
+            % db
+            db = load(fullfile(output_dir, 'db.mat'));
+            small_db_size = 50;
+            DagNNViz.plot_db_all(...
+                db, ...
+                output_dir, ...
+                formattype, ...
+                small_db_size ...
+            );
+            
+        end
+        
+        function plot_costs(costs, output_dir, formattype)
+            % PLOT_COSTS plots 'costs' over time
+            
+            epochs = 1:length(costs.train);
+            % start epochs from zero (0, 1, 2, ...)
+            epochs = epochs - 1;
+            
+            figure(...
+                'Name', 'CNN - Costs [Training, Validation, Test]', ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0, 0, 1, 1] ...
+                );
+            
+            % costs
+            % - train
+            plot(epochs, costs.train, 'LineWidth', 2, 'Color', 'blue');
+            set(gca, 'YScale', 'log');
+            hold('on');
+            % - validation
+            plot(epochs, costs.val, 'LineWidth', 2, 'Color', 'green');
+            % - test
+            plot(epochs, costs.test, 'LineWidth', 2, 'Color', 'red');
+            
+            % minimum validation error
+            % - circle
+            [~, index_min_val_cost] = min(costs.val);
+            circle_x = index_min_val_cost - 1;
+            circle_y = costs.val(index_min_val_cost);
+            dark_green = [0.1, 0.8, 0.1];
+            scatter(circle_x, circle_y, ...
+                'MarkerEdgeColor', dark_green, ...
+                'SizeData', 75, ...
+                'LineWidth', 2 ...
+                );
+            
+            % - cross lines
+            h_ax = gca;
+            %   - horizontal line
+            line(...
+                h_ax.XLim, ...
+                [circle_y, circle_y], ...
+                'Color', dark_green, ...
+                'LineStyle', ':', ...
+                'LineWidth', 1.5 ...
+                );
+            %   - vertical line
+            line(...
+                [circle_x, circle_x], ...
+                h_ax.YLim, ...
+                'Color', dark_green, ...
+                'LineStyle', ':', ...
+                'LineWidth', 1.5 ...
+                );
+            
+            hold('off');
+            
+            % ticks
+            % - x
+            set(gca, ...
+                'XTick', unique([0, index_min_val_cost - 1, epochs(end)]) ...
+            );
+            % - y
+            set(gca, ...
+                'YTick', ...
+                unique([...
+                    round(min([costs.train, costs.val, costs.test]), 1), ...
+                    round(costs.val(index_min_val_cost), 1), ...
+                    round(max([costs.train, costs.val, costs.test]), 1) ...
+                ]) ...
+            );
+            
+            % labels
+            xlabel('Epoch');
+            ylabel('Mean Squared Error');
+            
+            % title
+            title(...
+                sprintf('Minimum Validation Error is %.3f at Epoch: %d', ...
+                costs.val(index_min_val_cost), ...
+                index_min_val_cost - 1 ...
+                ) ...
+                );
+            
+            % legend
+            legend(...
+                sprintf('Training (%.3f)', costs.train(index_min_val_cost)), ...
+                sprintf('Validation (%.3f)', costs.val(index_min_val_cost)), ...
+                sprintf('Test (%.3f)', costs.test(index_min_val_cost)), ...
+                'Best Validation Error' ...
+                );
+            
+            % grid
+            grid('on');
+            
+            % box
+            box('off');
+            
+            % save
+            saveas(gcf, fullfile(output_dir, ['error.' formattype]), formattype);
+        end
+        
+        function plot_results()
+            % parameters
+            % - 'bak' dir
+            bak_dir = DagNNViz.bak_dir;
+            % - format-type
+            formattype = DagNNViz.formattype;
+            % - output-dir
+            output_dir = fullfile(bak_dir, 'results');
+            if ~exist(output_dir, 'dir')
+                mkdir(output_dir);
+            end
+            
+            % costs
+            % - make
+            costs = load(fullfile(bak_dir, 'costs.mat'));
+            % - plot
+            DagNNViz.plot_costs(costs, output_dir, formattype);
+            
+            % params
+            DagNNViz.plot_params(bak_dir, output_dir, formattype);
         end
     end
 end
