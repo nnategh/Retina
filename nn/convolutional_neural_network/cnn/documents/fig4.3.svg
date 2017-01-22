@@ -338,68 +338,65 @@
 				<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 				<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st4"/>
 				<text x="13.56" y="599.4" class="st5" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>x</text>			</g>
-			<g id="group15-15" transform="translate(85.5,-270)" v:mID="15" v:groupContext="group">
-				<title>Sheet.15</title>
-				<g id="shape7-16" v:mID="7" v:groupContext="shape" transform="translate(0,-63)">
-					<title>Square.7</title>
-					<desc>CONV</desc>
-					<v:userDefs>
-						<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
-					</v:userDefs>
-					<v:textBlock v:margins="rect(4,4,4,4)"/>
-					<v:textRect cx="45" cy="567" width="90" height="90"/>
-					<rect x="0" y="522" width="90" height="90" class="st6"/>
-					<text x="22.78" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>CONV</text>				</g>
-				<g id="shape8-19" v:mID="8" v:groupContext="shape" transform="translate(90,-63)">
-					<title>Square.8</title>
-					<desc>NORM</desc>
-					<v:userDefs>
-						<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
-					</v:userDefs>
-					<v:textBlock v:margins="rect(4,4,4,4)"/>
-					<v:textRect cx="45" cy="567" width="90" height="90"/>
-					<rect x="0" y="522" width="90" height="90" class="st6"/>
-					<text x="19.78" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>NORM</text>				</g>
-				<g id="shape9-22" v:mID="9" v:groupContext="shape" transform="translate(180,-63)">
-					<title>Square.9</title>
-					<desc>RELU</desc>
-					<v:userDefs>
-						<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
-					</v:userDefs>
-					<v:textBlock v:margins="rect(4,4,4,4)"/>
-					<v:textRect cx="45" cy="567" width="90" height="90"/>
-					<rect x="0" y="522" width="90" height="90" class="st6"/>
-					<text x="23.58" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>RELU</text>				</g>
-				<g id="shape11-25" v:mID="11" v:groupContext="shape">
-					<title>Circle.11</title>
-					<desc>w</desc>
-					<v:userDefs>
-						<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
-					</v:userDefs>
-					<v:textBlock v:margins="rect(4,4,4,4)"/>
-					<v:textRect cx="18" cy="594" width="31.5" height="27"/>
-					<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st8"/>
-					<text x="11.51" y="599.4" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>w</text>				</g>
-				<g id="shape12-28" v:mID="12" v:groupContext="shape" transform="translate(36.1765,0)">
-					<title>Circle.12</title>
-					<desc>b</desc>
-					<v:userDefs>
-						<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
-					</v:userDefs>
-					<v:textBlock v:margins="rect(4,4,4,4)"/>
-					<v:textRect cx="18" cy="594" width="31.5" height="27"/>
-					<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st8"/>
-					<text x="13.1" y="599.4" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>b</text>				</g>
-				<g id="shape13-31" v:mID="13" v:groupContext="shape" v:layerMember="0" transform="translate(9,-36)">
-					<title>Dynamic connector</title>
-					<path d="M9 612 L9 592.04" class="st2"/>
-				</g>
-				<g id="shape14-36" v:mID="14" v:groupContext="shape" v:layerMember="0" transform="translate(45.1765,-36)">
-					<title>Dynamic connector.14</title>
-					<path d="M9 612 L9 592.04" class="st2"/>
-				</g>
+			<g id="shape7-15" v:mID="7" v:groupContext="shape" transform="translate(85.5,-333)">
+				<title>Square.7</title>
+				<desc>CONV</desc>
+				<v:userDefs>
+					<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
+				</v:userDefs>
+				<v:textBlock v:margins="rect(4,4,4,4)"/>
+				<v:textRect cx="45" cy="567" width="90" height="90"/>
+				<rect x="0" y="522" width="90" height="90" class="st6"/>
+				<text x="22.78" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>CONV</text>			</g>
+			<g id="shape8-18" v:mID="8" v:groupContext="shape" transform="translate(175.5,-333)">
+				<title>Square.8</title>
+				<desc>NORM</desc>
+				<v:userDefs>
+					<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
+				</v:userDefs>
+				<v:textBlock v:margins="rect(4,4,4,4)"/>
+				<v:textRect cx="45" cy="567" width="90" height="90"/>
+				<rect x="0" y="522" width="90" height="90" class="st6"/>
+				<text x="19.78" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>NORM</text>			</g>
+			<g id="shape9-21" v:mID="9" v:groupContext="shape" transform="translate(450,-333)">
+				<title>Square.9</title>
+				<desc>RELU</desc>
+				<v:userDefs>
+					<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
+				</v:userDefs>
+				<v:textBlock v:margins="rect(4,4,4,4)"/>
+				<v:textRect cx="45" cy="567" width="90" height="90"/>
+				<rect x="0" y="522" width="90" height="90" class="st6"/>
+				<text x="23.58" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>RELU</text>			</g>
+			<g id="shape11-24" v:mID="11" v:groupContext="shape" transform="translate(85.5,-270)">
+				<title>Circle.11</title>
+				<desc>w</desc>
+				<v:userDefs>
+					<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
+				</v:userDefs>
+				<v:textBlock v:margins="rect(4,4,4,4)"/>
+				<v:textRect cx="18" cy="594" width="31.5" height="27"/>
+				<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st8"/>
+				<text x="11.51" y="599.4" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>w</text>			</g>
+			<g id="shape12-27" v:mID="12" v:groupContext="shape" transform="translate(121.676,-270)">
+				<title>Circle.12</title>
+				<desc>b</desc>
+				<v:userDefs>
+					<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
+				</v:userDefs>
+				<v:textBlock v:margins="rect(4,4,4,4)"/>
+				<v:textRect cx="18" cy="594" width="31.5" height="27"/>
+				<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st8"/>
+				<text x="13.1" y="599.4" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>b</text>			</g>
+			<g id="shape13-30" v:mID="13" v:groupContext="shape" v:layerMember="0" transform="translate(94.5,-306)">
+				<title>Dynamic connector.13</title>
+				<path d="M9 612 L9 592.04" class="st2"/>
 			</g>
-			<g id="shape16-41" v:mID="16" v:groupContext="shape" transform="translate(585,-360)">
+			<g id="shape14-35" v:mID="14" v:groupContext="shape" v:layerMember="0" transform="translate(130.676,-306)">
+				<title>Dynamic connector.14</title>
+				<path d="M9 612 L9 592.04" class="st2"/>
+			</g>
+			<g id="shape16-40" v:mID="16" v:groupContext="shape" transform="translate(585,-360)">
 				<title>Circle.16</title>
 				<desc>B</desc>
 				<v:userDefs>
@@ -409,9 +406,9 @@
 				<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 				<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st10"/>
 				<text x="12.14" y="599.4" class="st11" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>B</text>			</g>
-			<g id="group25-44" transform="translate(796.5,-270)" v:mID="25" v:groupContext="group">
+			<g id="group25-43" transform="translate(796.5,-270)" v:mID="25" v:groupContext="group">
 				<title>Sheet.25</title>
-				<g id="shape26-45" v:mID="26" v:groupContext="shape" transform="translate(0,-63)">
+				<g id="shape26-44" v:mID="26" v:groupContext="shape" transform="translate(0,-63)">
 					<title>Square.7</title>
 					<desc>CONV</desc>
 					<v:userDefs>
@@ -421,7 +418,7 @@
 					<v:textRect cx="45" cy="567" width="90" height="90"/>
 					<rect x="0" y="522" width="90" height="90" class="st6"/>
 					<text x="22.78" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>CONV</text>				</g>
-				<g id="shape27-48" v:mID="27" v:groupContext="shape" transform="translate(90,-63)">
+				<g id="shape27-47" v:mID="27" v:groupContext="shape" transform="translate(90,-63)">
 					<title>Square.8</title>
 					<desc>NORM</desc>
 					<v:userDefs>
@@ -431,7 +428,7 @@
 					<v:textRect cx="45" cy="567" width="90" height="90"/>
 					<rect x="0" y="522" width="90" height="90" class="st6"/>
 					<text x="19.78" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>NORM</text>				</g>
-				<g id="shape28-51" v:mID="28" v:groupContext="shape" transform="translate(180,-63)">
+				<g id="shape28-50" v:mID="28" v:groupContext="shape" transform="translate(180,-63)">
 					<title>Square.9</title>
 					<desc>RELU</desc>
 					<v:userDefs>
@@ -441,7 +438,7 @@
 					<v:textRect cx="45" cy="567" width="90" height="90"/>
 					<rect x="0" y="522" width="90" height="90" class="st6"/>
 					<text x="23.58" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>RELU</text>				</g>
-				<g id="shape29-54" v:mID="29" v:groupContext="shape">
+				<g id="shape29-53" v:mID="29" v:groupContext="shape">
 					<title>Circle.11</title>
 					<desc>w</desc>
 					<v:userDefs>
@@ -451,7 +448,7 @@
 					<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 					<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st8"/>
 					<text x="11.51" y="599.4" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>w</text>				</g>
-				<g id="shape30-57" v:mID="30" v:groupContext="shape" transform="translate(36.1765,0)">
+				<g id="shape30-56" v:mID="30" v:groupContext="shape" transform="translate(36.1765,0)">
 					<title>Circle.12</title>
 					<desc>b</desc>
 					<v:userDefs>
@@ -461,20 +458,16 @@
 					<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 					<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st8"/>
 					<text x="13.1" y="599.4" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>b</text>				</g>
-				<g id="shape31-60" v:mID="31" v:groupContext="shape" v:layerMember="0" transform="translate(9,-36)">
+				<g id="shape31-59" v:mID="31" v:groupContext="shape" v:layerMember="0" transform="translate(9,-36)">
 					<title>Dynamic connector</title>
 					<path d="M9 612 L9 592.04" class="st2"/>
 				</g>
-				<g id="shape32-65" v:mID="32" v:groupContext="shape" v:layerMember="0" transform="translate(45.1765,-36)">
+				<g id="shape32-64" v:mID="32" v:groupContext="shape" v:layerMember="0" transform="translate(45.1765,-36)">
 					<title>Dynamic connector.14</title>
 					<path d="M9 612 L9 592.04" class="st2"/>
 				</g>
 			</g>
-			<g id="shape33-70" v:mID="33" v:groupContext="shape" v:layerMember="0" transform="translate(355.5,-369)">
-				<title>Dynamic connector.33</title>
-				<path d="M0 603 L82.96 603" class="st2"/>
-			</g>
-			<g id="shape36-75" v:mID="36" v:groupContext="shape" transform="translate(472.5,-90)">
+			<g id="shape36-69" v:mID="36" v:groupContext="shape" transform="translate(472.5,-90)">
 				<title>Circle.36</title>
 				<desc>A</desc>
 				<v:userDefs>
@@ -484,7 +477,7 @@
 				<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 				<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st10"/>
 				<text x="12.53" y="599.4" class="st11" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>A</text>			</g>
-			<g id="shape38-78" v:mID="38" v:groupContext="shape" transform="translate(675,-333)">
+			<g id="shape38-72" v:mID="38" v:groupContext="shape" transform="translate(666,-333)">
 				<title>Square.38</title>
 				<desc>SUM</desc>
 				<v:userDefs>
@@ -494,15 +487,15 @@
 				<v:textRect cx="45" cy="567" width="90" height="90"/>
 				<rect x="0" y="522" width="90" height="90" class="st6"/>
 				<text x="26.19" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>SUM</text>			</g>
-			<g id="shape40-81" v:mID="40" v:groupContext="shape" v:layerMember="0" transform="translate(508.5,-108)">
+			<g id="shape40-75" v:mID="40" v:groupContext="shape" v:layerMember="0" transform="translate(508.5,-108)">
 				<title>Dynamic connector.40</title>
-				<path d="M0 612 L211.5 612 L211.5 394.04" class="st2"/>
+				<path d="M0 612 L202.5 612 L202.5 394.04" class="st2"/>
 			</g>
-			<g id="shape41-86" v:mID="41" v:groupContext="shape" v:layerMember="0" transform="translate(765,-369)">
+			<g id="shape41-80" v:mID="41" v:groupContext="shape" v:layerMember="0" transform="translate(756,-369)">
 				<title>Dynamic connector.41</title>
-				<path d="M0 603 L24.46 603" class="st2"/>
+				<path d="M0 603 L33.46 603" class="st2"/>
 			</g>
-			<g id="shape43-91" v:mID="43" v:groupContext="shape" transform="translate(1093.5,-360)">
+			<g id="shape43-85" v:mID="43" v:groupContext="shape" transform="translate(1093.5,-360)">
 				<title>Circle.43</title>
 				<desc>G</desc>
 				<v:userDefs>
@@ -512,11 +505,11 @@
 				<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 				<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st10"/>
 				<text x="12.22" y="599.4" class="st11" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>G</text>			</g>
-			<g id="shape44-94" v:mID="44" v:groupContext="shape" v:layerMember="0" transform="translate(1066.5,-369)">
+			<g id="shape44-88" v:mID="44" v:groupContext="shape" v:layerMember="0" transform="translate(1066.5,-369)">
 				<title>Dynamic connector.44</title>
 				<path d="M0 603 L19.96 603" class="st2"/>
 			</g>
-			<g id="shape46-99" v:mID="46" v:groupContext="shape" transform="translate(1156.5,-333)">
+			<g id="shape46-93" v:mID="46" v:groupContext="shape" transform="translate(1156.5,-333)">
 				<title>Square.46</title>
 				<desc>COST</desc>
 				<v:userDefs>
@@ -526,11 +519,11 @@
 				<v:textRect cx="45" cy="567" width="90" height="90"/>
 				<rect x="0" y="522" width="90" height="90" class="st6"/>
 				<text x="23.97" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>COST</text>			</g>
-			<g id="shape47-102" v:mID="47" v:groupContext="shape" v:layerMember="0" transform="translate(1129.5,-369)">
+			<g id="shape47-96" v:mID="47" v:groupContext="shape" v:layerMember="0" transform="translate(1129.5,-369)">
 				<title>Dynamic connector.47</title>
 				<path d="M0 603 L19.96 603" class="st2"/>
 			</g>
-			<g id="shape48-107" v:mID="48" v:groupContext="shape" transform="translate(1183.5,-270)">
+			<g id="shape48-101" v:mID="48" v:groupContext="shape" transform="translate(1183.5,-270)">
 				<title>Circle.48</title>
 				<desc>y</desc>
 				<v:userDefs>
@@ -540,11 +533,11 @@
 				<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 				<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st4"/>
 				<text x="13.99" y="599.4" class="st5" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>y</text>			</g>
-			<g id="shape49-110" v:mID="49" v:groupContext="shape" v:layerMember="0" transform="translate(1192.5,-306)">
+			<g id="shape49-104" v:mID="49" v:groupContext="shape" v:layerMember="0" transform="translate(1192.5,-306)">
 				<title>Dynamic connector.49</title>
 				<path d="M9 612 L9 592.04" class="st2"/>
 			</g>
-			<g id="shape50-115" v:mID="50" v:groupContext="shape" transform="translate(1273.5,-360)">
+			<g id="shape50-109" v:mID="50" v:groupContext="shape" transform="translate(1273.5,-360)">
 				<title>Circle.50</title>
 				<desc>c</desc>
 				<v:userDefs>
@@ -554,13 +547,13 @@
 				<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 				<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st10"/>
 				<text x="13.39" y="599.4" class="st11" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>c</text>			</g>
-			<g id="shape54-118" v:mID="54" v:groupContext="shape" v:layerMember="0" transform="translate(621,-369)">
+			<g id="shape54-112" v:mID="54" v:groupContext="shape" v:layerMember="0" transform="translate(621,-369)">
 				<title>Dynamic connector.54</title>
-				<path d="M0 603 L46.96 603" class="st2"/>
+				<path d="M0 603 L37.96 603" class="st2"/>
 			</g>
-			<g id="group56-123" transform="translate(76.5,0)" v:mID="56" v:groupContext="group">
+			<g id="group56-117" transform="translate(76.5,0)" v:mID="56" v:groupContext="group">
 				<title>Sheet.56</title>
-				<g id="shape18-124" v:mID="18" v:groupContext="shape" transform="translate(0,-63)">
+				<g id="shape18-118" v:mID="18" v:groupContext="shape" transform="translate(0,-63)">
 					<title>Square.7</title>
 					<desc>CONV</desc>
 					<v:userDefs>
@@ -570,7 +563,7 @@
 					<v:textRect cx="45" cy="567" width="90" height="90"/>
 					<rect x="0" y="522" width="90" height="90" class="st6"/>
 					<text x="22.78" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>CONV</text>				</g>
-				<g id="shape19-127" v:mID="19" v:groupContext="shape" transform="translate(90,-63)">
+				<g id="shape19-121" v:mID="19" v:groupContext="shape" transform="translate(90,-63)">
 					<title>Square.8</title>
 					<desc>NORM</desc>
 					<v:userDefs>
@@ -580,7 +573,7 @@
 					<v:textRect cx="45" cy="567" width="90" height="90"/>
 					<rect x="0" y="522" width="90" height="90" class="st6"/>
 					<text x="19.78" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>NORM</text>				</g>
-				<g id="shape20-130" v:mID="20" v:groupContext="shape" transform="translate(180,-63)">
+				<g id="shape20-124" v:mID="20" v:groupContext="shape" transform="translate(180,-63)">
 					<title>Square.9</title>
 					<desc>RELU</desc>
 					<v:userDefs>
@@ -590,7 +583,7 @@
 					<v:textRect cx="45" cy="567" width="90" height="90"/>
 					<rect x="0" y="522" width="90" height="90" class="st6"/>
 					<text x="23.58" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>RELU</text>				</g>
-				<g id="shape21-133" v:mID="21" v:groupContext="shape">
+				<g id="shape21-127" v:mID="21" v:groupContext="shape">
 					<title>Circle.11</title>
 					<desc>w</desc>
 					<v:userDefs>
@@ -600,7 +593,7 @@
 					<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 					<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st8"/>
 					<text x="11.51" y="599.4" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>w</text>				</g>
-				<g id="shape22-136" v:mID="22" v:groupContext="shape" transform="translate(36.1765,0)">
+				<g id="shape22-130" v:mID="22" v:groupContext="shape" transform="translate(36.1765,0)">
 					<title>Circle.12</title>
 					<desc>b</desc>
 					<v:userDefs>
@@ -610,15 +603,15 @@
 					<v:textRect cx="18" cy="594" width="31.5" height="27"/>
 					<path d="M0 594 A18 18 0 0 1 36 594 A18 18 0 1 1 0 594 Z" class="st8"/>
 					<text x="13.1" y="599.4" class="st9" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>b</text>				</g>
-				<g id="shape23-139" v:mID="23" v:groupContext="shape" v:layerMember="0" transform="translate(9,-36)">
+				<g id="shape23-133" v:mID="23" v:groupContext="shape" v:layerMember="0" transform="translate(9,-36)">
 					<title>Dynamic connector.23</title>
 					<path d="M9 612 L9 592.04" class="st2"/>
 				</g>
-				<g id="shape24-144" v:mID="24" v:groupContext="shape" v:layerMember="0" transform="translate(45.1765,-36)">
+				<g id="shape24-138" v:mID="24" v:groupContext="shape" v:layerMember="0" transform="translate(45.1765,-36)">
 					<title>Dynamic connector.14</title>
 					<path d="M9 612 L9 592.04" class="st2"/>
 				</g>
-				<g id="shape55-149" v:mID="55" v:groupContext="shape" transform="translate(270,-63)">
+				<g id="shape55-143" v:mID="55" v:groupContext="shape" transform="translate(270,-63)">
 					<title>Square.55</title>
 					<desc>MINUS</desc>
 					<v:userDefs>
@@ -629,19 +622,19 @@
 					<rect x="0" y="522" width="90" height="90" class="st6"/>
 					<text x="17.77" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>MINUS</text>				</g>
 			</g>
-			<g id="shape57-152" v:mID="57" v:groupContext="shape" v:layerMember="0" transform="translate(436.5,-99)">
+			<g id="shape57-146" v:mID="57" v:groupContext="shape" v:layerMember="0" transform="translate(436.5,-99)">
 				<title>Dynamic connector.57</title>
 				<path d="M0 603 L28.96 603" class="st2"/>
 			</g>
-			<g id="shape62-157" v:mID="62" v:groupContext="shape" v:layerMember="0" transform="translate(18,-211.5)">
+			<g id="shape62-151" v:mID="62" v:groupContext="shape" v:layerMember="0" transform="translate(18,-211.5)">
 				<title>Dynamic connector</title>
 				<path d="M0 612 L0 715.5 L51.46 715.5" class="st2"/>
 			</g>
-			<g id="shape64-162" v:mID="64" v:groupContext="shape" v:layerMember="0" transform="translate(18,-247.5)">
+			<g id="shape64-156" v:mID="64" v:groupContext="shape" v:layerMember="0" transform="translate(18,-247.5)">
 				<title>Dynamic connector.64</title>
 				<path d="M0 612 L0 481.5 L60.46 481.5" class="st2"/>
 			</g>
-			<g id="shape68-167" v:mID="68" v:groupContext="shape" transform="translate(445.5,-333)">
+			<g id="shape68-161" v:mID="68" v:groupContext="shape" transform="translate(315,-333)">
 				<title>Square.68</title>
 				<desc>SUM</desc>
 				<v:userDefs>
@@ -651,14 +644,22 @@
 				<v:textRect cx="45" cy="567" width="90" height="90"/>
 				<rect x="0" y="522" width="90" height="90" class="st6"/>
 				<text x="26.19" y="572.4" class="st7" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>SUM</text>			</g>
-			<g id="shape69-170" v:mID="69" v:groupContext="shape" v:layerMember="0" transform="translate(535.5,-369)">
-				<title>Dynamic connector.69</title>
-				<path d="M0 603 L42.46 603" class="st2"/>
-			</g>
-			<g id="shape70-175" v:mID="70" v:groupContext="shape" v:layerMember="0" transform="translate(481.5,-126)">
+			<g id="shape70-164" v:mID="70" v:groupContext="shape" v:layerMember="0" transform="translate(490.5,-126)">
 				<title>Dynamic connector.70</title>
-				<path d="M9 612 L9 412.04" class="st2"/>
+				<path d="M0 612 L0 477 L-130.5 477 L-130.5 412.04" class="st2"/>
 			</g>
+		</g>
+		<g id="shape72-169" v:mID="72" v:groupContext="shape" v:layerMember="0" transform="translate(283.5,-540)">
+			<title>Dynamic connector</title>
+			<path d="M0 603 L42.46 603" class="st2"/>
+		</g>
+		<g id="shape73-174" v:mID="73" v:groupContext="shape" v:layerMember="0" transform="translate(423,-540)">
+			<title>Dynamic connector.73</title>
+			<path d="M0 603 L37.96 603" class="st2"/>
+		</g>
+		<g id="shape74-179" v:mID="74" v:groupContext="shape" v:layerMember="0" transform="translate(558,-540)">
+			<title>Dynamic connector.74</title>
+			<path d="M0 603 L37.96 603" class="st2"/>
 		</g>
 	</g>
 </svg>
