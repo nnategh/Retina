@@ -33,6 +33,13 @@ classdef DagNNTrainer < handle
         elapsed_times
     end
     
+    properties (Constant)
+        % - props_dir: char vector
+        %   path of properties json files
+        
+        props_dir = './data/props';
+    end
+    
     methods
         function obj = DagNNTrainer(props_filename)
             %DAGNNTRAINER constructor of 'DagNNTrainer' class
@@ -41,6 +48,12 @@ classdef DagNNTrainer < handle
             % ----------
             % - props_filename: char vector
             %   path of configuration json file
+            
+            % print 'Load: ...'
+            [~, filename, ext] = fileparts(props_filename);
+            DagNNTrainer.print_dashline();
+            fprintf(sprintf('Load: "%s\" file\n', [filename, ext]));
+            DagNNTrainer.print_dashline();
             
             obj.init_props(props_filename);
         end
@@ -182,6 +195,7 @@ classdef DagNNTrainer < handle
                     'convnorm', @dagnn.ConvNorm, ...
                     'convnormrelu', @dagnn.ConvNormReLU, ...
                     'convnormreluminus', @dagnn.ConvNormReLUMinus, ...
+                    'normrelu', @dagnn.NormReLU, ...
                     'sum', @dagnn.Sum, ...
                     'quadcost', @dagnn.QuadraticCost ...
                     );
@@ -1000,6 +1014,33 @@ classdef DagNNTrainer < handle
             obj = load(filename);
             obj = obj.(char(fieldnames(obj)));
         end
-    end
-    
+        
+        function test()
+            % setup 'matconvnet'
+            run('vl_setupnn.m');
+            
+            % 'props' dir
+            props_dir = DagNNTrainer.props_dir;
+            % properties filenames
+            props_filenames = ...
+                dir(fullfile(props_dir, '*.json'));
+            props_filenames = {props_filenames.name};
+            
+            % net
+            for i = 1 : length(props_filenames)
+                % props-filename
+                props_filename = fullfile(props_dir, props_filenames{i});
+                % - define
+                cnn = DagNNTrainer(props_filename);
+                % - run
+                tic();
+                cnn.run();
+                toc();
+                
+                % - plot net
+                figure();
+                DagNNTrainer.plot_digraph(props_filename);
+            end
+        end
+    end 
 end
