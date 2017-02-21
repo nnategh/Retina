@@ -34,6 +34,11 @@ classdef DagNNTrainer < handle
     end
     
     properties (Constant)
+        % - props_dir: char vector
+        %   path of properties json files
+        
+        props_dir = './data/props';
+
         format_spec = struct(...
             'change_db_y', '-changed_y.mat', ...
             'noisy_params', '-snr_%d.mat' ...

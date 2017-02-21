@@ -8,8 +8,8 @@ classdef DagNNViz < handle
     end
     
     properties (Constant)
-        bak_dir = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/fig4.2/sigma_1.0_bak_70_0.0001';
-        data_dir = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11';
+        bak_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\fig4.2\bak_200_0.0001';
+        data_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11';
         formattype = 'svg';
     end
     
@@ -957,7 +957,7 @@ classdef DagNNViz < handle
                 param_history = {};
                 return
             end
-            
+        
             % param-hsitory
             param_history = cell(N, 1);
             for i = 1 : N
@@ -1218,12 +1218,13 @@ classdef DagNNViz < handle
                 % param.value
                 param.value = ...
                     DagNNViz.get_param_history(bak_dir, (param_names{i}));
-                % - resize param.value
-                param.value = param.value(1 : number_of_epochs);
                 
                 if isempty(param.value)
                     continue
                 end
+                
+                % - resize param.values
+                param.value = param.value(1 : number_of_epochs);
                 
                 % new figure
                 figure(...
@@ -1232,7 +1233,7 @@ classdef DagNNViz < handle
                     'Units', 'normalized', ...
                     'OuterPosition', [0, 0, 1, 1] ...
                 );
-
+                
                 % if parameter is a bias
                 if param.is_bias
                     param.value = [param.value{:}];
@@ -1581,62 +1582,45 @@ classdef DagNNViz < handle
             saveas(gcf, fullfile(output_dir, ['error.' formattype]), formattype);
         end
         
-        function plot_results(bak_dir, formattype)
+        function plot_results(props_filename)
             % parameters
-<<<<<<< HEAD
-%             % - 'bak' dir
-%             bak_dir = DagNNViz.bak_dir;
-%             % - format-type
-%             formattype = DagNNViz.formattype;
-            % - output-dir
-            output_dir = fullfile(bak_dir, 'images');
-            if ~exist(output_dir, 'dir')
-                mkdir(output_dir);
-=======
             % - format-type
             formattype = DagNNViz.formattype;
             % - time resolution
             dt_sec = Neda.dt_sec;
             
-            % 'props' dir
-            props_dir = DagNNTrainer.props_dir;
-            % properties filenames
-            props_filenames = ...
-                dir(fullfile(props_dir, '*.json'));
-            props_filenames = {props_filenames.name};
-            
-            % main loop
-            for i = 1 : length(props_filenames)
-                DagNNTrainer.print_dashline();
-                fprintf('%s\n', props_filenames{i});
-                DagNNTrainer.print_dashline();
-                % props-filename
-                props_filename = fullfile(props_dir, props_filenames{i});
-                % props
-                props = jsondecode(fileread(props_filename));
-                % 'bak' dir
-                bak_dir = props.data.bak_dir;
-                
-                % output dir
-                % - path
-                output_dir = fullfile(bak_dir, 'summary/images');
-                % - make if doesn't exist
-                if ~exist(output_dir, 'dir')
-                    mkdir(output_dir);
-                end
+            % main
+            DagNNTrainer.print_dashline();
+            fprintf('%s\n', props_filename);
+            DagNNTrainer.print_dashline();
+            % props
+            props = jsondecode(fileread(props_filename));
+            % 'bak' dir
+            bak_dir = props.data.bak_dir;
 
-                % costs
-                % - make
-                costs = load(fullfile(bak_dir, 'costs.mat'));
-                % - plot
-                DagNNViz.plot_costs(costs, output_dir, formattype);
-
-                % params
-                DagNNViz.plot_params({props.net.params.name}, bak_dir, output_dir, formattype, 101, dt_sec);
->>>>>>> 7c560ee09af839c0a811c3ed8f77a34a72db15d9
+            % output dir
+            % - path
+            output_dir = fullfile(bak_dir, 'images');
+            % - make if doesn't exist
+            if ~exist(output_dir, 'dir')
+                mkdir(output_dir);
             end
-            
-            
+
+            % costs
+            % - make
+            costs = load(fullfile(bak_dir, 'costs.mat'));
+            % - plot
+            DagNNViz.plot_costs(costs, output_dir, formattype);
+
+            % params
+            DagNNViz.plot_params(...
+                {props.net.params.name}, ...
+                bak_dir, ...
+                output_dir, ...
+                formattype, ...
+                props.learning.number_of_epochs + 1, ...
+                dt_sec ...
+            );
         end
     end
 end
