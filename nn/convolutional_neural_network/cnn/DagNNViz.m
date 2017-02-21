@@ -264,6 +264,7 @@ classdef DagNNViz < handle
                 'YTick', [] ...
             );
             box('off');
+            title('Initial Value', 'FontSize', fontsize + 2);
             xlabel('Time (s)', 'FontSize', fontsize);
 
             % red sample
@@ -292,6 +293,79 @@ classdef DagNNViz < handle
             suptitle(sprintf('%d Samples', N));
         end
         
+        function plot_filter_initial_best(x, red_index, dt_sec)
+            % PLOT_DB_ALL plot all input/output samples in square grid
+            %
+            % Parameters
+            % ----------
+            % - db: struct('x', cell array, 'y', cell array)
+            %   input database
+            % - output_dir: char vector
+            %   path of output directory
+            % - formattype: char vector
+            %   file format such as 'pdf', 'svg', 'png' or ...
+            % - small_db_size: int (default = 50)
+            %   select first samples from db
+            
+            % figure
+            figure(...
+                'Name', 'Filter - Initial & Best', ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0, 0, 1, 1] ...
+            );
+        
+            % subplot grid
+            % - rows
+            rows = 1;
+            % - cols
+            cols = 2;
+            
+            % initial/best filter
+            % - initial
+            initial = x{1};
+            subplot(rows, cols, 1);
+            time = (0 : length(initial) - 1) * dt_sec;
+            plot(time, initial, 'Color', 'blue');
+            title('Initial Value');
+            xlabel('Time (s)');
+            ylabel('');
+            %   - ticks
+            %       - x
+            round_digits = 3;
+            set(gca, ...
+                'XTick', [0, round(time(end), round_digits)] ...
+            );
+            %       - y
+            set(gca, ...
+                'YTick', unique([round(min(initial), round_digits), round(max(initial), round_digits)]) ...
+            );
+            %   - grid
+            grid('on');
+            box('off');
+            
+            % - best
+            best = x{red_index};
+            subplot(rows, cols, 2);
+            time = (0 : length(best) - 1) * dt_sec;
+            plot(time, best, 'Color', 'red');
+            title('Min Validation Cost');
+            xlabel('Time (s)');
+            ylabel('');
+            % - ticks
+            %   - x
+            set(gca, ...
+                'XTick', [0, round(time(end), round_digits)] ...
+            );
+            %   - y
+            set(gca, ...
+                'YTick', unique([round(min(best), round_digits), round(max(best), round_digits)]) ...
+            );
+            % - grid
+            grid('on');
+            box('off');
+        end
+        
         function plot_db_all(db, output_dir, formattype, small_db_size)
             % PLOT_DB_ALL plot all input/output samples in square grid
             %
@@ -305,6 +379,10 @@ classdef DagNNViz < handle
             %   file format such as 'pdf', 'svg', 'png' or ...
             % - small_db_size: int (default = 50)
             %   select first samples from db
+            
+            fprintf('----------------\n');
+            fprintf('PLOT DB ALL\n');
+            fprintf('----------------\n');
             
             % figure
             figure(...
@@ -392,14 +470,92 @@ classdef DagNNViz < handle
             % super-title
             suptitle(...
                 sprintf(...
-                    'First %d Samples of %d (Stimulous/Response) Pairs of Training Dataset', ...
+                    'First %d Samples of %d (Stimulous/Response) Pairs of Training Set', ...
                     length(small_db.x), ...
                     length(db.x) ...
                 ) ...
             );
         
             % save
-            saveas(gcf, fullfile(output_dir, ['db.' formattype]), formattype);
+            saveas(gcf, fullfile(output_dir, ['db_all.' formattype]), formattype);
+        end
+        
+        function plot_db_first(db, dt_sec, output_dir, formattype)
+            % PLOT_DB_ALL plot all input/output samples in square grid
+            %
+            % Parameters
+            % ----------
+            % - db: struct('x', cell array, 'y', cell array)
+            %   input database
+            % - output_dir: char vector
+            %   path of output directory
+            % - formattype: char vector
+            %   file format such as 'pdf', 'svg', 'png' or ...
+            % - small_db_size: int (default = 50)
+            %   select first samples from db
+            
+            % figure
+            figure(...
+                'Name', 'DB', ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0, 0, 1, 1] ...
+            );
+        
+            % subplot grid
+            % - rows
+            rows = 1;
+            % - cols
+            cols = 2;
+            
+            % first input/output pair
+            % - input
+            subplot(rows, cols, 1);
+            time = (0 : length(db.x{1}) - 1) * dt_sec;
+            plot(time, db.x{1}, 'Color', 'blue');
+            title('Stimulus');
+            xlabel('Time (s)');
+            ylabel('Intensity');
+            % - ticks
+            %   - x
+            round_digits = 2;
+            set(gca, ...
+                'XTick', [0, round(time(end), round_digits)] ...
+            );
+            %   - y
+            set(gca, ...
+                'YTick', unique([round(min(db.x{1}), round_digits), 0, round(max(db.x{1}), round_digits)]) ...
+            );
+            % - grid
+            grid('on');
+            box('off');
+            % - output
+            subplot(rows, cols, 2);
+            time = (0 : length(db.y{1}) - 1) * dt_sec;
+            plot(time, db.y{1}, 'Color', 'red');
+            title('Response');
+            xlabel('Time (s)');
+            ylabel('Rate (Hz)');
+            % - ticks
+            %   - x
+            set(gca, ...
+                'XTick', [0, round(time(end), round_digits)] ...
+            );
+            %   - y
+            set(gca, ...
+                'YTick', unique([round(min(db.y{1}), round_digits), 0, round(max(db.y{1}), round_digits)]) ...
+            );
+            % - grid
+            grid('on');
+            box('off');
+            
+            % super-title
+            suptitle(...
+                sprintf('First Sample (Stimulous/Response) of Training Set') ...
+            );
+        
+            % save
+            saveas(gcf, fullfile(output_dir, ['db_first.' formattype]), formattype);
         end
         
         function plot_db_yhat_all(db, y_)
@@ -1033,7 +1189,7 @@ classdef DagNNViz < handle
             param.title = titles.(param_name(3));
         end
         
-        function plot_params(bak_dir, output_dir, formattype)
+        function plot_params(param_names, bak_dir, output_dir, formattype, number_of_epochs, dt_sec)
             % PLOT_PARAMS plots and save parameters in 'params.mat' file
             %
             % Parameters
@@ -1045,7 +1201,7 @@ classdef DagNNViz < handle
             %   file format such as 'pdf', 'svg', 'png' or ...
             
             % - prameter names
-            param_names = {'w_B', 'w_A', 'w_G', 'b_B', 'b_A', 'b_G'};
+            % param_names = {'w_B', 'w_A', 'w_G', 'b_B', 'b_A', 'b_G'};
             
             % costs
             % - load
@@ -1054,7 +1210,7 @@ classdef DagNNViz < handle
             [~, index_min_val_cost] = min(costs.val);
             
             % plot and save
-            round_digits = 2;
+            round_digits = 3;
             for i = 1 : length(param_names)
                 % param
                 % param.isbias, param.title
@@ -1062,6 +1218,8 @@ classdef DagNNViz < handle
                 % param.value
                 param.value = ...
                     DagNNViz.get_param_history(bak_dir, (param_names{i}));
+                % - resize param.value
+                param.value = param.value(1 : number_of_epochs);
                 
                 if isempty(param.value)
                     continue
@@ -1079,7 +1237,7 @@ classdef DagNNViz < handle
                 if param.is_bias
                     param.value = [param.value{:}];
                     epochs = 0 : (length(param.value) - 1);
-                    plot(param.value);
+                    plot(epochs, param.value);
                     hold('on');
                     plot(...
                         index_min_val_cost - 1, ...
@@ -1091,14 +1249,14 @@ classdef DagNNViz < handle
                     );
                     grid('on');
                     box('off');
-                    title(param.title);
+                    title(sprintf('%s (Bias with Min Validation Cost is Red)', param.title));
                     xlabel('Epoch');
                     ylabel('Bias');
                     
                     % ticks
                     % - x
                     set(gca, ...
-                        'XTick', unique([0, index_min_val_cost - 1, epochs(end)]) ...
+                        'XTick', unique([0, index_min_val_cost - 1, number_of_epochs]) ...
                     );
                     % - y
                     set(gca, ...
@@ -1109,6 +1267,7 @@ classdef DagNNViz < handle
                             round(max(param.value), round_digits) ...
                         ]) ...
                     );
+                    ylim([round(min(param.value), round_digits), round(max(param.value), round_digits)]);
                     
                     % save
                     saveas(...
@@ -1122,13 +1281,13 @@ classdef DagNNViz < handle
                 
                 % if parameter is a filter
                 else
+                    % - all
                     DagNNViz.plot_filter_history(param.value, index_min_val_cost);
                     box('off');
                     suptitle(...
                         sprintf(...
-                            'Filter of %s (%d epochs)', ...
-                            param.title, ...
-                            length(param.value) ...
+                            'Filter of %s for each Epoch of Training (Filter with Min Validation Cost is Red)', ...
+                            param.title ...
                         ) ...
                     );
                 
@@ -1137,7 +1296,28 @@ classdef DagNNViz < handle
                         gcf, ...
                         fullfile(...
                             output_dir, ...
-                            ['filter_', lower(param.title), '.', formattype] ...
+                            ['filter_', lower(param.title), '_all.', formattype] ...
+                        ), ...
+                        formattype ...
+                    );
+                
+                    % - initial & best
+                    DagNNViz.plot_filter_initial_best(param.value, index_min_val_cost, dt_sec);
+                    box('off');
+                    suptitle(...
+                        sprintf(...
+                            'Filter of %s for Epoch 0 & Epoch %d', ...
+                            param.title, ...
+                            index_min_val_cost - 1 ...
+                        ) ...
+                    );
+                
+                    % save
+                    saveas(...
+                        gcf, ...
+                        fullfile(...
+                            output_dir, ...
+                            ['filter_', lower(param.title), '_initial_best.', formattype] ...
                         ), ...
                         formattype ...
                     );
@@ -1172,7 +1352,7 @@ classdef DagNNViz < handle
                 'Name', 'STIM', ...
                 'NumberTitle', 'off', ...
                 'Units', 'normalized', ...
-                'OuterPosition', [0.25, 0.25, 0.5, 0.5] ...
+                'OuterPosition', [0, 0, 1, 1] ...
             );
             % plot
             plot(time, stim);
@@ -1225,7 +1405,7 @@ classdef DagNNViz < handle
                 'Name', 'RESP', ...
                 'NumberTitle', 'off', ...
                 'Units', 'normalized', ...
-                'OuterPosition', [0.25, 0.25, 0.5, 0.5] ...
+                'OuterPosition', [0, 0, 1, 1] ...
             );
             % plot
             plot(time, resp);
@@ -1253,25 +1433,47 @@ classdef DagNNViz < handle
         end
         
         function plot_data()
-            output_dir = Neda.output_dir;
+            % parameters
+            % - path of data directory
+            data_dir = DagNNViz.data_dir;
+            % - time resolution (sec)
             dt_sec = Neda.dt_sec;
-            formattype = 'png';
+            % - format-type of saved images
+            formattype = DagNNViz.formattype;
+            
+            % output directory
+            % - path
+            output_dir = fullfile(data_dir, 'summary/images');
+            % - make if doesn't exist
+            if ~exist(output_dir, 'dir')
+                mkdir(output_dir);
+            end
+            
             % data
-            data = load(fullfile(output_dir, 'data.mat'));
+            data = load(fullfile(data_dir, 'data.mat'));
             % - stim
             stim = data.stim;
             DagNNViz.plot_stim(stim, dt_sec, output_dir, formattype);
             % - resp
             resp = data.resp;
             DagNNViz.plot_resp(resp, dt_sec, output_dir, formattype);
+            
             % db
-            db = load(fullfile(output_dir, 'db.mat'));
+            % - all
+            db = load(fullfile(data_dir, 'db.mat'));
             small_db_size = 50;
             DagNNViz.plot_db_all(...
                 db, ...
                 output_dir, ...
                 formattype, ...
                 small_db_size ...
+            );
+            % - first
+            DagNNViz.plot_db_first(...
+                db, ...
+                dt_sec, ...
+                output_dir, ...
+                formattype ...
             );
             
         end
@@ -1334,6 +1536,7 @@ classdef DagNNViz < handle
             hold('off');
             
             % ticks
+            round_digits = 3;
             % - x
             set(gca, ...
                 'XTick', unique([0, index_min_val_cost - 1, epochs(end)]) ...
@@ -1342,15 +1545,15 @@ classdef DagNNViz < handle
             set(gca, ...
                 'YTick', ...
                 unique([...
-                    round(min([costs.train, costs.val, costs.test]), 1), ...
-                    round(costs.val(index_min_val_cost), 1), ...
-                    round(max([costs.train, costs.val, costs.test]), 1) ...
+                    round(min([costs.train, costs.val, costs.test]), round_digits), ...
+                    round(costs.val(index_min_val_cost), round_digits), ...
+                    round(max([costs.train, costs.val, costs.test]), round_digits) ...
                 ]) ...
             );
             
             % labels
             xlabel('Epoch');
-            ylabel('Mean Squared Error');
+            ylabel('Mean Squared Error (Hz^2)');
             
             % title
             title(...
@@ -1380,6 +1583,7 @@ classdef DagNNViz < handle
         
         function plot_results(bak_dir, formattype)
             % parameters
+<<<<<<< HEAD
 %             % - 'bak' dir
 %             bak_dir = DagNNViz.bak_dir;
 %             % - format-type
@@ -1388,16 +1592,51 @@ classdef DagNNViz < handle
             output_dir = fullfile(bak_dir, 'images');
             if ~exist(output_dir, 'dir')
                 mkdir(output_dir);
+=======
+            % - format-type
+            formattype = DagNNViz.formattype;
+            % - time resolution
+            dt_sec = Neda.dt_sec;
+            
+            % 'props' dir
+            props_dir = DagNNTrainer.props_dir;
+            % properties filenames
+            props_filenames = ...
+                dir(fullfile(props_dir, '*.json'));
+            props_filenames = {props_filenames.name};
+            
+            % main loop
+            for i = 1 : length(props_filenames)
+                DagNNTrainer.print_dashline();
+                fprintf('%s\n', props_filenames{i});
+                DagNNTrainer.print_dashline();
+                % props-filename
+                props_filename = fullfile(props_dir, props_filenames{i});
+                % props
+                props = jsondecode(fileread(props_filename));
+                % 'bak' dir
+                bak_dir = props.data.bak_dir;
+                
+                % output dir
+                % - path
+                output_dir = fullfile(bak_dir, 'summary/images');
+                % - make if doesn't exist
+                if ~exist(output_dir, 'dir')
+                    mkdir(output_dir);
+                end
+
+                % costs
+                % - make
+                costs = load(fullfile(bak_dir, 'costs.mat'));
+                % - plot
+                DagNNViz.plot_costs(costs, output_dir, formattype);
+
+                % params
+                DagNNViz.plot_params({props.net.params.name}, bak_dir, output_dir, formattype, 101, dt_sec);
+>>>>>>> 7c560ee09af839c0a811c3ed8f77a34a72db15d9
             end
             
-            % costs
-            % - make
-            costs = load(fullfile(bak_dir, 'costs.mat'));
-            % - plot
-            DagNNViz.plot_costs(costs, output_dir, formattype);
             
-            % params
-            DagNNViz.plot_params(bak_dir, output_dir, formattype);
         end
     end
 end

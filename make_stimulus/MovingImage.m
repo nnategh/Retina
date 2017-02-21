@@ -29,6 +29,11 @@ classdef MovingImage < handle
         video_frame_rate        % frame-reate of video which must be saved
     end
     
+    properties (Constant)
+        plot_line_width = 2;
+        plot_color = 'black';
+    end
+    
     methods
         function obj = MovingImage()
             % is a constructor, and set the independant variables to thier
@@ -84,7 +89,7 @@ classdef MovingImage < handle
             
             res = cat(3, res, res, res);
                      
-            res = insertShape(res, 'rectangle', obj.box, 'LineWidth', 3, 'Color', [255, 0, 0]);
+            res = insertShape(res, 'rectangle', obj.box, 'LineWidth', 5, 'Color', [255, 0, 0]);
         
             imshow(res);
         end
@@ -136,18 +141,34 @@ classdef MovingImage < handle
         function plot_x_time_series(obj, n)
             res = zeros(obj.number_of_translations, 1);
             res(1:n) = obj.x_values(1:n);
-            plot(res);
+            
+            plot(...
+                res, ...
+                'LineWidth', MovingImage.plot_line_width, ...
+                'Color', MovingImage.plot_color ...
+            );
         end
         
         function plot_y_time_series(obj, n)
             res = zeros(obj.number_of_translations, 1);
             res(1:n) = obj.y_values(1:n);
-            plot(res);
+            
+            plot(...
+                res, ...
+                'LineWidth', MovingImage.plot_line_width, ...
+                'Color', MovingImage.plot_color ...
+            );
         end
         
         function show_results(obj, framerate)
            % show original image + sampled points + overlaid image
-           h = figure('Name','Moving-Image Simulation','NumberTitle','off', 'Units','normalized','OuterPosition',[0 0 1 1]);
+           h = figure(...
+               'Name', 'Moving-Image Simulation', ...
+               'NumberTitle','off', ...
+               'Units','normalized', ...
+               'OuterPosition', [0 0 1 1], ...
+               'Color', 'white' ...
+           );
            rows = 3;
            cols = 3;
            
@@ -173,10 +194,10 @@ classdef MovingImage < handle
                figure(h), subplot(rows, cols, 2);
                obj.show_sampled_translations_image(i);
                title('Translated Images');
-               xlabel(sprintf('(dx, dy) = (%d, %d)', ...
-                    obj.x_values(i), ...
-                    obj.y_values(i)...
-                ));
+%                xlabel(sprintf('(dx, dy) = (%d, %d)', ...
+%                     obj.x_values(i), ...
+%                     obj.y_values(i)...
+%                 ));
                
                % overlaid image (zoomed in)
                figure(h), subplot(rows, cols, 3);
@@ -193,19 +214,30 @@ classdef MovingImage < handle
                obj.plot_x_time_series(i);
                title('Time Series');
                xlabel('');
-               ylabel(sprintf('dx_{px} = [%d, %d]', x_min, x_max));
-               % ylabel('x_{px}');
+%                ylabel(sprintf('dx_{px} = [%d, %d]', x_min, x_max));
+               ylabel('dx_{px}');
                ylim([x_min, x_max]);
-               set(gca, 'XTickLabel', []);
+               set(gca, ...
+                   'XTick', [], ...
+                   'YTick', [x_min, x_max], ...
+                   'Box', 'off' ...
+               );
+               grid('on');
 
                % y
                figure(h), subplot(rows, cols, 7:9);
                obj.plot_y_time_series(i);
                xlabel('sample');
-               ylabel(sprintf('dy_{px} = [%d, %d]', y_min, y_max));
-               % ylabel('y_{px}');
+%                ylabel(sprintf('dy_{px} = [%d, %d]', y_min, y_max));
+               ylabel('dy_{px}');
                % set(gca, 'XTickLabel', []);
                ylim([y_min, y_max]);
+               set(gca, ...
+                   'XTick', [], ...
+                   'YTick', [y_min, y_max], ...
+                   'Box', 'off' ...
+               );
+               grid('on');
                
                if obj.is_video_saved
                    writeVideo(vw, getframe(h));
