@@ -14,6 +14,9 @@ cnn = DagNNTrainer(props_filename);
 
 %% Net
 % cnn.init();
+% cnn.make_noisy_params(0.005);
+% % cnn.make_db();
+
 cnn.run();
 
 %% Results

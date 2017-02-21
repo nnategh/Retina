@@ -8,9 +8,9 @@ classdef DagNNViz < handle
     end
     
     properties (Constant)
-        bak_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\fig4.2\bak_200_0.0001';
-        data_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11';
-        formattype = 'png';
+        bak_dir = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/fig4.2/sigma_1.0_bak_70_0.0001';
+        data_dir = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11';
+        formattype = 'svg';
     end
     
     methods (Static)
@@ -797,6 +797,11 @@ classdef DagNNViz < handle
                 {params.name} ...
             );
         
+            if ~any(param_index)
+                param_history = {};
+                return
+            end
+            
             % param-hsitory
             param_history = cell(N, 1);
             for i = 1 : N
@@ -1051,13 +1056,6 @@ classdef DagNNViz < handle
             % plot and save
             round_digits = 2;
             for i = 1 : length(param_names)
-                % new figure
-                figure(...
-                    'Name', 'Parameters', ...
-                    'NumberTitle', 'off', ...
-                    'Units', 'normalized', ...
-                    'OuterPosition', [0, 0, 1, 1] ...
-                );
                 % param
                 % param.isbias, param.title
                 param = DagNNViz.analyze_param_name(param_names{i});
@@ -1065,6 +1063,18 @@ classdef DagNNViz < handle
                 param.value = ...
                     DagNNViz.get_param_history(bak_dir, (param_names{i}));
                 
+                if isempty(param.value)
+                    continue
+                end
+                
+                % new figure
+                figure(...
+                    'Name', 'Parameters', ...
+                    'NumberTitle', 'off', ...
+                    'Units', 'normalized', ...
+                    'OuterPosition', [0, 0, 1, 1] ...
+                );
+
                 % if parameter is a bias
                 if param.is_bias
                     param.value = [param.value{:}];
@@ -1368,14 +1378,14 @@ classdef DagNNViz < handle
             saveas(gcf, fullfile(output_dir, ['error.' formattype]), formattype);
         end
         
-        function plot_results()
+        function plot_results(bak_dir, formattype)
             % parameters
-            % - 'bak' dir
-            bak_dir = DagNNViz.bak_dir;
-            % - format-type
-            formattype = DagNNViz.formattype;
+%             % - 'bak' dir
+%             bak_dir = DagNNViz.bak_dir;
+%             % - format-type
+%             formattype = DagNNViz.formattype;
             % - output-dir
-            output_dir = fullfile(bak_dir, 'results');
+            output_dir = fullfile(bak_dir, 'images');
             if ~exist(output_dir, 'dir')
                 mkdir(output_dir);
             end

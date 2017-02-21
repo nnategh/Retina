@@ -1,0 +1,18 @@
+{
+    "vars": {
+        "x": null,
+        "w1": null
+    },
+    "params": ["w1", "w2", "w3"],
+    "blocks": {
+        "y1": {
+            "inputs": ["x", "w1"],
+            "function": "conv"
+        }
+    },
+    "layers": ["y1", "y2", "y3", "y_", "c"],
+    "diffs": {
+        "x": null,
+        "w1": null
+    }
+}
