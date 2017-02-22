@@ -1,9 +1,9 @@
 classdef SamplingEye < handle
-    %SamplingEye simulate random walk movement of an eye
+    %SamplingEye simulates random-walk movement of an eye
     %   input: an image (grayscale); pixel size; movement step size in space and time.
     % 
     %   output 1 (numerical): an array containing pixel intensities in that image at the locations sampled by the eye. The sampling_method follows the statistics explained in the paper (or the paragraph) attached in my previous note:
-    %   Random walk with horizontal and vertical motion occurring independently; 9.2 ?m every 15 ms (default setting). Some conversion between displacement unit in length and in number of pixels in the image should be implemented in the code.
+    %   Random walk with horizontal and vertical motion occurring independently; 9.2 um every 15 ms (default setting). Some conversion between displacement unit in length and in number of pixels in the image should be implemented in the code.
     % 
     %   options: sampling_method (1) only along horizontal axis; (2) only vertical axis; (3) in two dimensions.
     % 
@@ -31,6 +31,7 @@ classdef SamplingEye < handle
         is_video_saved          % save the video of simulation
         video_filename          % name of video which must be saved
         video_frame_rate        % frame-reate of video which must be saved
+        box
     end
     
     properties (Constant)
@@ -40,7 +41,7 @@ classdef SamplingEye < handle
     
     methods
         function obj = SamplingEye()
-            % is a constructor, and set the independant variables to thier
+            % is a constructor, and set the independant variables to their
             % default values
             obj.filename = 'lena.jpg';
             obj.start_point = [];
@@ -56,6 +57,8 @@ classdef SamplingEye < handle
             obj.is_video_saved = false;
             obj.video_filename = 'result';
             obj.video_frame_rate = 15;
+            
+            obj.box = [205   205   102   102];
         end
         
         function init(obj)
@@ -263,71 +266,113 @@ classdef SamplingEye < handle
             hold('off');
         end
         
-        function show_results(obj, framerate)
+        function show_sampled_translations_image(obj, n)
+            res = imtranslate(obj.image, obj.sampled_points(n, :) - [255, 255]);
+            
+            res = cat(3, res, res, res);
+                     
+            res = insertShape(res, 'rectangle', obj.box, 'LineWidth', 5, 'Color', [255, 0, 0]);
+        
+            imshow(res);
+        end
+        
+        function show_target_image(obj, n)
+            res = imtranslate(obj.image, obj.sampled_points(n, :) - [255, 255]);
+            
+            res = imcrop(res, obj.box);
+            
+            imshow(res);
+        end
+        
+        function show_results(obj)
            % show original image + sampled points + overlaid image
+           
+           % figure
            h = figure(...
-               'Name', 'Random-Walk Motion of the Eye', ...
+               'Name', 'Random-Walk Motion of Eye', ...
                'NumberTitle', 'off', ...
                'Units','normalized', ...
                'OuterPosition', [0 0 1 1], ...
                'Color', 'white' ...
            );
+           % grid of subplots
+           % - rows
            rows = 4;
+           % - cols
            cols = 4;
            
+           % video writer
            if obj.is_video_saved
                vw = VideoWriter(obj.video_filename, 'MPEG-4');
                vw.FrameRate = obj.video_frame_rate;
                open(vw);
            end
            
-           delay = 1 / framerate;
+           % delay
+           delay = 1 / obj.video_frame_rate;
+           % box
            box = obj.get_box_of_target_area();
+           
+           % limits
+           % - x
            x_min = min(obj.x_values);
            x_max = max(obj.x_values);
+           % - y
            y_min = min(obj.y_values);
            y_max = max(obj.y_values);
+           % - intensity
            intensity_min = min(obj.intensity_values);
            intensity_max = max(obj.intensity_values);
            
            % original image
            figure(h), subplot(rows, cols, 1);
            imshow(obj.image);
-           title('Original Image');
+           title('original Image');
             
            for i = 1:obj.number_of_points
-               % sample points
-               figure(h), subplot(rows, cols, 2);
-               obj.show_sampled_points_image(i, box);
-               title('Sampled Points');
-               xlabel(sprintf('(x_{px}, y_{px}) = (%d, %d)', ...
-                    obj.x_values(i), ...
-                    obj.y_values(i)...
-                ));
+%                % sample points
+%                figure(h), subplot(rows, cols, 2);
+%                obj.show_sampled_points_image(i, box);
+%                title('Sampled Points');
+%                xlabel(sprintf('(x_{px}, y_{px}) = (%d, %d)', ...
+%                     obj.x_values(i), ...
+%                     obj.y_values(i)...
+%                 ));
                
                % overlaid image (zoomed in)
-               figure(h), subplot(rows, cols, 3);
+               figure(h), subplot(rows, cols, 2);
                obj.show_overlaid_image(i, box, true);
-               title('Overlaid Image (zoomed in)');
-               xlabel(sprintf('intensity = %d', ...
-                   obj.image(...
-                    round(obj.sampled_points(i, 1)),...
-                    round(obj.sampled_points(i, 2)))...
-               ));
+               title('eye movement trajectory');
+%                xlabel(sprintf('intensity = %d', ...
+%                    obj.image(...
+%                     round(obj.sampled_points(i, 1)),...
+%                     round(obj.sampled_points(i, 2)))...
+%                ));
                
-               % overlaid image
-               figure(h), subplot(rows, cols, 4);
-               obj.show_overlaid_image(i, box, false);
-               title('Overlaid Image');
-               xlabel(sprintf('sample: %d/%d', i, obj.number_of_points));
+%                % overlaid image
+%                figure(h), subplot(rows, cols, 4);
+%                obj.show_overlaid_image(i, box, false);
+%                title('Overlaid Image');
+%                xlabel(sprintf('sample: %d/%d', i, obj.number_of_points));
+                
 
+               % retinal image
+               figure(h), subplot(rows, cols, 3);
+               obj.show_sampled_translations_image(i);
+               title('retinal image');
+               
+               %  region of fixation
+               figure(h), subplot(rows, cols, 4);
+               obj.show_target_image(i);
+               title('region of fixation');
+               
                % x
                figure(h), subplot(rows, cols, 5:8);
                obj.plot_x_time_series(i);
                title('Time Series');
                xlabel('');
                % ylabel(sprintf('x_{px} = [%d, %d]', x_min, x_max));
-               ylabel('x_{px}');
+               ylabel('dx_{px}');
                ylim([x_min, x_max]);
                set(gca, ...
                    'XTick', [], ...
@@ -341,7 +386,7 @@ classdef SamplingEye < handle
                obj.plot_y_time_series(i);
                xlabel('');
                % ylabel(sprintf('y_{px} = [%d, %d]', y_min, y_max));
-               ylabel('y_{px}');
+               ylabel('dy_{px}');
                ylim([y_min, y_max]);
                set(gca, ...
                    'XTick', [], ...
@@ -360,7 +405,7 @@ classdef SamplingEye < handle
                ylim([0, 255]);
                set(gca, ...
                    'XTick', [], ...
-                   'YTick', [0, 255], ...
+                   'YTick', [intensity_min, intensity_max], ...
                    'Box', 'off' ...
                );
                grid('on');
@@ -468,7 +513,7 @@ classdef SamplingEye < handle
            obj.get_intensity_values();
            obj.get_x_values();
            obj.get_y_values();
-           obj.show_results(100);
+           obj.show_results();
         end
     end
     

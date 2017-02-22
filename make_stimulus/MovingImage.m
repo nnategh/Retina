@@ -1,5 +1,5 @@
 classdef MovingImage < handle
-    %MovingImage simulate random-walk translation on an image
+    %MovingImage simulates random-walk translation on an image
     %   input: an image (grayscale); pixel size; movement step size in space and time.
     % 
     %   output: 
@@ -102,7 +102,6 @@ classdef MovingImage < handle
             obj.target_images(:, :, n) = res;
         
             imshow(res);
-            
         end
         
         function plot_intensity_time_series(obj)

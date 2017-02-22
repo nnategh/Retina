@@ -38,6 +38,11 @@ classdef DagNNTrainer < handle
         %   path of properties json files
         
         props_dir = './data/props';
+
+        format_spec = struct(...
+            'change_db_y', '-changed_y.mat', ...
+            'noisy_params', '-snr_%d.mat' ...
+        );
     end
     
     methods
@@ -427,6 +432,11 @@ classdef DagNNTrainer < handle
             
             % elapsed times
             obj.init_elapsed_times();
+            
+            % bak_dir == 'must_be_removed'
+            if strcmp(obj.props.data.bak_dir, 'must_be_removed')
+                rmdir(obj.props.data.bak_dir, 's');
+            end
         end
         
         function y = out(obj, x)
@@ -800,7 +810,7 @@ classdef DagNNTrainer < handle
         end
         
         %todo: split to 'db', 'params'
-        function make_random_data(obj, number_of_samples, generator)
+        function make_random_data_old(obj, number_of_samples, generator)
             % MAKE_RANDOM_DATA make random 'db' and 'params' files.
             %
             %   Parameters
@@ -841,6 +851,70 @@ classdef DagNNTrainer < handle
             % - save
             save(obj.props.data.params_filename, '-struct', 'weights');
             clear('weights');
+        end
+        
+        function make_db_with_changed_y(obj)
+            % MAKE_DB_WITH_CHANGED_Y generated 'db.y' based on given 
+            % 'db.x' and 'params' file.
+            
+            % db filename
+            db_filename = [...
+                obj.props.data.db_filename, ...
+                DagNNTrainer.format_spec.change_db_y ...
+            ];
+        
+            if exis(db_filename, 'file')
+                return
+            end
+            
+            % db
+            db.x = obj.db.x;
+            db.y = obj.out(db.x);
+            
+            % save
+            save(...
+                db_filename, ...
+                '-struct', 'db' ...
+            );
+            clear('db');
+        end
+        
+        function make_noisy_params(obj, snr)
+            % MAKE_NOISY_PARAMS
+            %
+            % Parameters
+            % ----------
+            % - snr: double
+            %   The scalar snr specifies the signal-to-noise ratio per 
+            %   sample, in dB
+            
+            % params filename
+            params_filename = [...
+                obj.props.data.params_filename, ...
+                sprintf(DagNNTrainer.format_spec.noisy_params, snr) ...
+            ];
+        
+            if exis(params_filename, 'file')
+                return
+            end
+            
+            % load
+            params = load(obj.props.data.params_filename);
+            
+            % add white Gaussian noise to signal
+            for field = fieldnames(params)
+                % x = params.(fields{i});
+                % params.(fields{i}) = x + sigma * randn(size(x));
+                params.(char(field)) = ...
+                    awgn(params.(char(field)), snr, 'measured');
+            end
+            
+            % save
+            save(...
+                params_filename, ...
+                '-struct', 'params' ...
+            );
+            clear('params');
         end
     end
     

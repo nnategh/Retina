@@ -953,6 +953,11 @@ classdef DagNNViz < handle
                 {params.name} ...
             );
         
+            if ~any(param_index)
+                param_history = {};
+                return
+            end
+        
             % param-hsitory
             param_history = cell(N, 1);
             for i = 1 : N
@@ -1207,6 +1212,20 @@ classdef DagNNViz < handle
             % plot and save
             round_digits = 3;
             for i = 1 : length(param_names)
+                % param
+                % param.isbias, param.title
+                param = DagNNViz.analyze_param_name(param_names{i});
+                % param.value
+                param.value = ...
+                    DagNNViz.get_param_history(bak_dir, (param_names{i}));
+                
+                if isempty(param.value)
+                    continue
+                end
+                
+                % - resize param.values
+                param.value = param.value(1 : number_of_epochs);
+                
                 % new figure
                 figure(...
                     'Name', 'Parameters', ...
@@ -1214,14 +1233,6 @@ classdef DagNNViz < handle
                     'Units', 'normalized', ...
                     'OuterPosition', [0, 0, 1, 1] ...
                 );
-                % param
-                % param.isbias, param.title
-                param = DagNNViz.analyze_param_name(param_names{i});
-                % param.value
-                param.value = ...
-                    DagNNViz.get_param_history(bak_dir, (param_names{i}));
-                % - resize param.value
-                param.value = param.value(1 : number_of_epochs);
                 
                 % if parameter is a bias
                 if param.is_bias
@@ -1571,51 +1582,45 @@ classdef DagNNViz < handle
             saveas(gcf, fullfile(output_dir, ['error.' formattype]), formattype);
         end
         
-        function plot_results()
+        function plot_results(props_filename)
             % parameters
             % - format-type
             formattype = DagNNViz.formattype;
             % - time resolution
             dt_sec = Neda.dt_sec;
             
-            % 'props' dir
-            props_dir = DagNNTrainer.props_dir;
-            % properties filenames
-            props_filenames = ...
-                dir(fullfile(props_dir, '*.json'));
-            props_filenames = {props_filenames.name};
-            
-            % main loop
-            for i = 1 : length(props_filenames)
-                DagNNTrainer.print_dashline();
-                fprintf('%s\n', props_filenames{i});
-                DagNNTrainer.print_dashline();
-                % props-filename
-                props_filename = fullfile(props_dir, props_filenames{i});
-                % props
-                props = jsondecode(fileread(props_filename));
-                % 'bak' dir
-                bak_dir = props.data.bak_dir;
-                
-                % output dir
-                % - path
-                output_dir = fullfile(bak_dir, 'summary/images');
-                % - make if doesn't exist
-                if ~exist(output_dir, 'dir')
-                    mkdir(output_dir);
-                end
+            % main
+            DagNNTrainer.print_dashline();
+            fprintf('%s\n', props_filename);
+            DagNNTrainer.print_dashline();
+            % props
+            props = jsondecode(fileread(props_filename));
+            % 'bak' dir
+            bak_dir = props.data.bak_dir;
 
-                % costs
-                % - make
-                costs = load(fullfile(bak_dir, 'costs.mat'));
-                % - plot
-                DagNNViz.plot_costs(costs, output_dir, formattype);
-
-                % params
-                DagNNViz.plot_params({props.net.params.name}, bak_dir, output_dir, formattype, 101, dt_sec);
+            % output dir
+            % - path
+            output_dir = fullfile(bak_dir, 'images');
+            % - make if doesn't exist
+            if ~exist(output_dir, 'dir')
+                mkdir(output_dir);
             end
-            
-            
+
+            % costs
+            % - make
+            costs = load(fullfile(bak_dir, 'costs.mat'));
+            % - plot
+            DagNNViz.plot_costs(costs, output_dir, formattype);
+
+            % params
+            DagNNViz.plot_params(...
+                {props.net.params.name}, ...
+                bak_dir, ...
+                output_dir, ...
+                formattype, ...
+                props.learning.number_of_epochs + 1, ...
+                dt_sec ...
+            );
         end
     end
 end
