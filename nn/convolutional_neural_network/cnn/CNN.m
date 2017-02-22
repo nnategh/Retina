@@ -249,11 +249,11 @@ classdef CNN < handle
         end
         
         function make_data(obj, N)
-    obj.x = cell(N, 1);
-    for i = 1:N
-        obj.x{i} = rand(obj.input_size);
-    end
-    obj.y = obj.out(obj.x);
+            obj.x = cell(N, 1);
+            for i = 1:N
+                obj.x{i} = rand(obj.input_size);
+            end
+            obj.y = obj.out(obj.x);
         end
         
         function init(obj)
