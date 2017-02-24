@@ -4,7 +4,7 @@ classdef DagNNNoisy < handle
     properties (Constant)
         base_props_dir = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\noisy\base_props';
         indexhtml_path = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\noisy\index.html';
-        snr = [10, 1, 0];
+        snr = [-1];
         formattype = 'svg';
     end
     
@@ -186,7 +186,7 @@ classdef DagNNNoisy < handle
                     DagNNNoisy.run_props(props_filename);
                     
                     % make images
-                    % DagNNViz.plot_results(props_filename);
+                    DagNNViz.plot_results(props_filename);
                     
                     % copy net.svg
                     copyfile(...
