@@ -10,7 +10,7 @@ classdef DagNNViz < handle
     properties (Constant)
         bak_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\fig4.2\bak_200_0.0001';
         data_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11';
-        formattype = 'eps';
+        formattype = 'epsc';
     end
     
     methods (Static)
@@ -477,7 +477,7 @@ classdef DagNNViz < handle
             );
         
             % save
-            saveas(gcf, fullfile(output_dir, ['db_all.' formattype]), formattype);
+            saveas(gcf, fullfile(output_dir, 'db_all'), formattype);
         end
         
         function plot_db_first(db, dt_sec, output_dir, formattype)
@@ -555,7 +555,7 @@ classdef DagNNViz < handle
             );
         
             % save
-            saveas(gcf, fullfile(output_dir, ['db_first.' formattype]), formattype);
+            saveas(gcf, fullfile(output_dir, 'db_first'), formattype);
         end
         
         function plot_db_yhat_all(db, y_)
@@ -1275,7 +1275,7 @@ classdef DagNNViz < handle
                         gcf, ...
                         fullfile(...
                             output_dir, ...
-                            ['bias_', lower(param.title), '.', formattype] ...
+                            ['bias_', lower(param.title)] ...
                         ), ...
                         formattype ...
                     );
@@ -1297,7 +1297,7 @@ classdef DagNNViz < handle
                         gcf, ...
                         fullfile(...
                             output_dir, ...
-                            ['filter_', lower(param.title), '_all.', formattype] ...
+                            ['filter_', lower(param.title), '_all'] ...
                         ), ...
                         formattype ...
                     );
@@ -1318,7 +1318,7 @@ classdef DagNNViz < handle
                         gcf, ...
                         fullfile(...
                             output_dir, ...
-                            ['filter_', lower(param.title), '_initial_best.', formattype] ...
+                            ['filter_', lower(param.title), '_initial_best'] ...
                         ), ...
                         formattype ...
                     );
@@ -1377,7 +1377,7 @@ classdef DagNNViz < handle
             grid('on');
             
             % save
-            saveas(gcf, fullfile(output_dir, ['stim.' formattype]), formattype);
+            saveas(gcf, fullfile(output_dir, 'stim'), formattype);
         end
         
         function plot_resp(resp, dt_sec, output_dir, formattype)
@@ -1430,7 +1430,98 @@ classdef DagNNViz < handle
             grid('on');
             
             % save
-            saveas(gcf, fullfile(output_dir, ['resp.' formattype]), formattype);
+            saveas(gcf, fullfile(output_dir, 'resp'), formattype);
+        end
+        
+        function plot_noisy_params(params_path, noisy_params_path, output_dir, snr, formattype, dt_sec)
+            % PLOT_NOISY_PARAMS plots noisy params with target ones
+            %
+            % Parameters
+            % ----------
+            % - params_path: char vector
+            %   Path of noiseless `params` file
+            % - noisy_params_path: char vector
+            %   Path of noisy `params` file
+            % - output_dir: char vector
+            %   Path of output directory
+            % - snr: double
+            %   Signal-to-noise ratio per sample, in dB
+            % - formattype: char vector
+            %   File-format such as 'pdf', 'svg', 'png' or ...
+            % - dt_sec: double
+            %   time resolution in seconds
+            
+            % default values
+            if ~exist('formattype', 'var')
+                formattype = DagNNViz.formattype;
+            end
+            if ~exist('dt_sec', 'var')
+                dt_sec = Neda.dt_sec;
+            end
+            
+            % params
+            % - noisless
+            params = load(params_path);
+            % - noisy
+            noisy_params = load(noisy_params_path);
+
+            fields = fieldnames(params);
+            for i = 1 : length(fields)
+                param = DagNNViz.analyze_param_name(fields{i});
+                
+                if param.is_bias
+                    continue
+                end
+                
+                % figure
+                figure(...
+                    'Name', 'Noisy Parameters', ...
+                    'NumberTitle', 'off', ...
+                    'Units', 'normalized', ...
+                    'OuterPosition', [0, 0, 1, 1] ...
+                );
+            
+                % noisless/noisy filter
+                % - noisless
+                noisless = params.(fields{i});
+                time = (0 : length(noisless) - 1) * dt_sec;
+                plot(time, noisless, 'Color', 'blue');
+                
+                hold('on');
+                
+                % - noisy
+                noisy = noisy_params.(fields{i});
+                plot(time, noisy, 'Color', 'red');
+                
+                xlabel('Time (s)');
+                ylabel('');
+                %   - ticks
+                %       - x
+                round_digits = 3;
+                set(gca, ...
+                    'XTick', [0, round(time(end), round_digits)] ...
+                );
+                %       - y
+                set(gca, ...
+                    'YTick', ...
+                    unique([...
+                        round(min(min(noisless), min(noisy)), round_digits), ...
+                        round(max(max(noisless), max(noisy)), round_digits) ...
+                    ]) ...
+                );
+                %   - grid
+                grid('on');
+                box('off');
+                
+                 % legend
+                legend(...
+                    'Noisless', ...
+                    sprintf('Noisy (SNR %0.2f dB)', snr) ...
+                );
+
+                % save
+                saveas(gcf, fullfile(output_dir, [lower(param.title), '_filter_noisy_noiseless']), formattype);
+            end            
         end
         
         function plot_data()
@@ -1579,7 +1670,7 @@ classdef DagNNViz < handle
             box('off');
             
             % save
-            saveas(gcf, fullfile(output_dir, ['error.' formattype]), formattype);
+            saveas(gcf, fullfile(output_dir, 'error'), formattype);
         end
         
         function plot_results(props_filename)
