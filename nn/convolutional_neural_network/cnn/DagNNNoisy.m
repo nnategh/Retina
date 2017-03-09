@@ -186,7 +186,7 @@ classdef DagNNNoisy < handle
                     DagNNNoisy.run_props(props_filename);
                     
                     % make images
-                    % DagNNViz.plot_results(props_filename);
+                    DagNNViz.plot_results(props_filename);
                     
                     % copy net.svg
                     copyfile(...
