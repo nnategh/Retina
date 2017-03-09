@@ -8,9 +8,21 @@ classdef DagNNViz < handle
     end
     
     properties (Constant)
+        % Constant Properties
+        % -------------------
+        % - bak_dir: char vector
+        % 
+        % - data_dir: char vector
+        % 
+        % - formattype: char vector
+        % 
+        % - showtitle: logical (default: true)
+        %   If `showtitle` is `false` then plots don't have any title
+        
         bak_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\fig4.2\bak_200_0.0001';
         data_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11';
         formattype = 'epsc';
+        showtitle = false;
     end
     
     methods (Static)
@@ -46,7 +58,9 @@ classdef DagNNViz < handle
             for i = 1 : N
                 plot(ax, x{i});
             end
-            title(sprintf('%d Samples', N));
+            if DagNNViz.showtitle
+                title(sprintf('%d Samples', N));
+            end
             hold('off');
         end
 
@@ -86,7 +100,9 @@ classdef DagNNViz < handle
             pm = pm / N;
             
             plot(ax, pm);
-            title('Mean');
+            if DagNNViz.showtitle
+                title('Mean');
+            end
         end
         
         function plot_summary(x)
@@ -137,19 +153,26 @@ classdef DagNNViz < handle
             %   - first sample
             subplot(rows, cols, indexes2(1));
             plot(x{1});
-            title(sprintf('Sample #%d', 1));
+            if DagNNViz.showtitle
+                title(sprintf('Sample #%d', 1));
+            end
             
             %   - middle sample
             subplot(rows, cols, indexes2(2));
             %       - index of middle sample
             middle_index = max(floor(N/2), 1);
             plot(x{middle_index});
-            title(sprintf('Sample #%d',middle_index));
+            if DagNNViz.showtitle
+                title(sprintf('Sample #%d',middle_index));
+            end
             
             %   - last sample
             subplot(rows, cols, indexes2(3));
             plot(x{N});
-            title(sprintf('Sample #%d', N));
+
+            if DagNNViz.showtitle
+                title(sprintf('Sample #%d', N));
+            end
             
             %   - mean of samples
             DagNNViz.plot_populationmean(...
@@ -223,7 +246,9 @@ classdef DagNNViz < handle
                    set(h, 'Color', 'red'); 
                 end
             end
-            suptitle(sprintf('%d Samples', N));
+            if DagNNViz.showtitle
+                suptitle(sprintf('%d Samples', N));
+            end
         end
         
         function plot_filter_history(x, red_index)
@@ -264,7 +289,9 @@ classdef DagNNViz < handle
                 'YTick', [] ...
             );
             box('off');
-            title('Initial Value', 'FontSize', fontsize + 2);
+            if DagNNViz.showtitle
+                title('Initial Value', 'FontSize', fontsize + 2);
+            end
             xlabel('Time (s)', 'FontSize', fontsize);
 
             % red sample
@@ -290,7 +317,9 @@ classdef DagNNViz < handle
                    set(h, 'Color', 'red'); 
                 end
             end
-            suptitle(sprintf('%d Samples', N));
+            if DagNNViz.showtitle
+                suptitle(sprintf('%d Samples', N));
+            end
         end
         
         function plot_filter_initial_best(x, red_index, dt_sec)
@@ -327,7 +356,9 @@ classdef DagNNViz < handle
             subplot(rows, cols, 1);
             time = (0 : length(initial) - 1) * dt_sec;
             plot(time, initial, 'Color', 'blue');
-            title('Initial Value');
+            if DagNNViz.showtitle
+                title('Initial Value');
+            end
             xlabel('Time (s)');
             ylabel('');
             %   - ticks
@@ -349,7 +380,9 @@ classdef DagNNViz < handle
             subplot(rows, cols, 2);
             time = (0 : length(best) - 1) * dt_sec;
             plot(time, best, 'Color', 'red');
-            title('Min Validation Cost');
+            if DagNNViz.showtitle
+                title('Min Validation Cost');
+            end
             xlabel('Time (s)');
             ylabel('');
             % - ticks
@@ -420,7 +453,9 @@ classdef DagNNViz < handle
             % - input
             subplot(rows, cols, i);
             plot(small_db.x{j}, 'Color', 'blue');
-            title('Stimulus', 'FontSize', fontsize + 2);
+            if DagNNViz.showtitle
+                title('Stimulus', 'FontSize', fontsize + 2);
+            end
             xlabel('Time (s)', 'FontSize', fontsize);
             ylabel('Intensity', 'FontSize', fontsize);
             set(gca, ...
@@ -431,7 +466,9 @@ classdef DagNNViz < handle
             % - output
             subplot(rows, cols, i + 1);
             plot(small_db.y{j}, 'Color', 'red');
-            title('Response', 'FontSize', fontsize + 2);
+            if DagNNViz.showtitle
+                title('Response', 'FontSize', fontsize + 2);
+            end
             xlabel('Time (s)', 'FontSize', fontsize);
             ylabel('Rate (Hz)', 'FontSize', fontsize);
             set(gca, ...
@@ -468,13 +505,15 @@ classdef DagNNViz < handle
                 box('off');
             end
             % super-title
-            suptitle(...
-                sprintf(...
-                    'First %d Samples of %d (Stimulous/Response) Pairs of Training Set', ...
-                    length(small_db.x), ...
-                    length(db.x) ...
-                ) ...
-            );
+            if DagNNViz.showtitle
+                suptitle(...
+                    sprintf(...
+                        'First %d Samples of %d (Stimulous/Response) Pairs of Training Set', ...
+                        length(small_db.x), ...
+                        length(db.x) ...
+                    ) ...
+                );
+            end
         
             % save
             saveas(gcf, fullfile(output_dir, 'db_all'), formattype);
@@ -513,7 +552,9 @@ classdef DagNNViz < handle
             subplot(rows, cols, 1);
             time = (0 : length(db.x{1}) - 1) * dt_sec;
             plot(time, db.x{1}, 'Color', 'blue');
-            title('Stimulus');
+            if DagNNViz.showtitle
+                title('Stimulus');
+            end
             xlabel('Time (s)');
             ylabel('Intensity');
             % - ticks
@@ -533,7 +574,9 @@ classdef DagNNViz < handle
             subplot(rows, cols, 2);
             time = (0 : length(db.y{1}) - 1) * dt_sec;
             plot(time, db.y{1}, 'Color', 'red');
-            title('Response');
+            if DagNNViz.showtitle
+                title('Response');
+            end
             xlabel('Time (s)');
             ylabel('Rate (Hz)');
             % - ticks
@@ -550,9 +593,11 @@ classdef DagNNViz < handle
             box('off');
             
             % super-title
-            suptitle(...
-                sprintf('First Sample (Stimulous/Response) of Training Set') ...
-            );
+            if DagNNViz.showtitle
+                suptitle(...
+                    sprintf('First Sample (Stimulous/Response) of Training Set') ...
+                );
+            end
         
             % save
             saveas(gcf, fullfile(output_dir, 'db_first'), formattype);
@@ -618,7 +663,9 @@ classdef DagNNViz < handle
                     'YColor', 'white' ...
                 );
             end
-            suptitle(sprintf('%d Samples', N));
+            if DagNNViz.showtitle
+                suptitle(sprintf('%d Samples', N));
+            end
         end
         
         function plot_bias(bak_dir, param_name, title_txt)
@@ -640,8 +687,12 @@ classdef DagNNViz < handle
             
             % plot
             plot(param_history);
-            xlabel('Epoch'), ylabel('Bias'), title(title_txt);
+            xlabel('Epoch');
+            ylabel('Bias');
             
+            if DagNNViz.showtitle
+                title(title_txt);
+            end            
         end
         
         function save_video(x, filename, frame_rate)
@@ -685,7 +736,9 @@ classdef DagNNViz < handle
             for i = 1 : N
                 plot(x{i});
                 ylim(ylimits);
-                title(sprintf('#%d / #%d', i, N));
+                if DagNNViz.showtitle
+                    title(sprintf('#%d / #%d', i, N));
+                end
                 writeVideo(vw, getframe(h));
                 
                 pause(delay);
@@ -736,12 +789,16 @@ classdef DagNNViz < handle
                 % - input
                 subplot(1, 2, 1);
                 plot(db.x{i}, 'Color', 'blue');
-                title(sprintf('Input (#%d / #%d)', i, N));
+                if DagNNViz.showtitle
+                    title(sprintf('Input (#%d / #%d)', i, N));
+                end
                 
                 % - output
                 subplot(1, 2, 2);
                 plot(db.y{i}, 'Color', 'red');
-                title(sprintf('Output (#%d / #%d)', i, N));
+                if DagNNViz.showtitle
+                    title(sprintf('Output (#%d / #%d)', i, N));
+                end
                 
                 % - frame
                 writeVideo(vw, getframe(h));
@@ -798,17 +855,23 @@ classdef DagNNViz < handle
                 % - input
                 subplot(1, 3, 1);
                 plot(db.x{i}, 'Color', 'blue');
-                title(sprintf('Input (#%d / #%d)', i, N));
+                if DagNNViz.showtitle
+                    title(sprintf('Input (#%d / #%d)', i, N));
+                end
                 
                 % - expected-output
                 subplot(1, 3, 2);
                 plot(db.y{i}, 'Color', 'red');
-                title(sprintf('Expected-Output (#%d / #%d)', i, N));
+                if DagNNViz.showtitle
+                    title(sprintf('Expected-Output (#%d / #%d)', i, N));
+                end
                 
                 % - expected-output
                 subplot(1, 3, 3);
                 plot(y_{i}, 'Color', 'green');
-                title(sprintf('Estimated-Output (#%d / #%d)', i, N));
+                if DagNNViz.showtitle
+                    title(sprintf('Estimated-Output (#%d / #%d)', i, N));
+                end
                 
                 % - frame
                 writeVideo(vw, getframe(h));
@@ -854,7 +917,9 @@ classdef DagNNViz < handle
             % save images
             for i = 1 : N
                 plot(x{i});
-                title(sprintf('#%d / #%d', i, N));
+                if DagNNViz.showtitle
+                    title(sprintf('#%d / #%d', i, N));
+                end
                 
                 imwrite(...
                     frame2im(getframe(h)), ...
@@ -901,12 +966,16 @@ classdef DagNNViz < handle
                 % - input
                 subplot(1, 2, 1);
                 plot(db.x{i}, 'Color', 'blue');
-                title(sprintf('Input (#%d / #%d)', i, N));
+                if DagNNViz.showtitle
+                    title(sprintf('Input (#%d / #%d)', i, N));
+                end
                 
                 % - output
                 subplot(1, 2, 2);
                 plot(db.y{i}, 'Color', 'red');
-                title(sprintf('Output (#%d / #%d)', i, N));
+                if DagNNViz.showtitle
+                    title(sprintf('Output (#%d / #%d)', i, N));
+                end
                 
                 % - write image to file
                 imwrite(...
@@ -1152,12 +1221,14 @@ classdef DagNNViz < handle
                 DagNNViz.plot_spike_trains(T{i, 'value'});
                 
                 % - title (number of spikes)
-                title(...
-                    sprintf(...
-                        '%d Spikes\n%s', ...
-                        T{i, 'number_of_spiks'} ...
-                    ) ...
-                );
+                if DagNNViz.showtitle
+                    title(...
+                        sprintf(...
+                            '%d Spikes\n%s', ...
+                            T{i, 'number_of_spiks'} ...
+                        ) ...
+                    );
+                end
                 
                 xlabel('');
                 ylabel(...
@@ -1250,7 +1321,9 @@ classdef DagNNViz < handle
                     );
                     grid('on');
                     box('off');
-                    title(sprintf('%s (Bias with Min Validation Cost is Red)', param.title));
+                    if DagNNViz.showtitle
+                        title(sprintf('%s (Bias with Min Validation Cost is Red)', param.title));
+                    end
                     xlabel('Epoch');
                     ylabel('Bias');
                     
@@ -1285,12 +1358,14 @@ classdef DagNNViz < handle
                     % - all
                     DagNNViz.plot_filter_history(param.value, index_min_val_cost);
                     box('off');
-                    suptitle(...
-                        sprintf(...
-                            'Filter of %s for each Epoch of Training (Filter with Min Validation Cost is Red)', ...
-                            param.title ...
-                        ) ...
-                    );
+                    if DagNNViz.showtitle
+                        suptitle(...
+                            sprintf(...
+                                'Filter of %s for each Epoch of Training (Filter with Min Validation Cost is Red)', ...
+                                param.title ...
+                            ) ...
+                        );
+                    end
                 
                     % save
                     saveas(...
@@ -1305,13 +1380,15 @@ classdef DagNNViz < handle
                     % - initial & best
                     DagNNViz.plot_filter_initial_best(param.value, index_min_val_cost, dt_sec);
                     box('off');
-                    suptitle(...
-                        sprintf(...
-                            'Filter of %s for Epoch 0 & Epoch %d', ...
-                            param.title, ...
-                            index_min_val_cost - 1 ...
-                        ) ...
-                    );
+                    if DagNNViz.showtitle
+                        suptitle(...
+                            sprintf(...
+                                'Filter of %s for Epoch 0 & Epoch %d', ...
+                                param.title, ...
+                                index_min_val_cost - 1 ...
+                            ) ...
+                        );
+                    end
                 
                     % save
                     saveas(...
@@ -1358,7 +1435,9 @@ classdef DagNNViz < handle
             % plot
             plot(time, stim);
             % - title
-            title('Stimulus');
+            if DagNNViz.showtitle
+                title('Stimulus');
+            end
             % - label
             %   - x
             xlabel('Time (s)');
@@ -1411,7 +1490,9 @@ classdef DagNNViz < handle
             % plot
             plot(time, resp);
             % - title
-            title('PSTH');
+            if DagNNViz.showtitle
+                title('PSTH');
+            end
             % - label
             %   - x
             xlabel('Time (s)');
@@ -1648,12 +1729,14 @@ classdef DagNNViz < handle
             ylabel('Mean Squared Error (Hz^2)');
             
             % title
-            title(...
-                sprintf('Minimum Validation Error is %.3f at Epoch: %d', ...
-                costs.val(index_min_val_cost), ...
-                index_min_val_cost - 1 ...
-                ) ...
-                );
+            if DagNNViz.showtitle
+                title(...
+                    sprintf('Minimum Validation Error is %.3f at Epoch: %d', ...
+                    costs.val(index_min_val_cost), ...
+                    index_min_val_cost - 1 ...
+                    ) ...
+                    );
+            end
             
             % legend
             legend(...
