@@ -36,8 +36,12 @@ classdef DagNNTrainer < handle
     properties (Constant)
         % - props_dir: char vector
         %   path of properties json files
+        % - has_bias: logical
+        %   True if `dagnn.Conv` has bias
         
         props_dir = './data/props';
+        
+        has_bias = false;
 
         format_spec = struct(...
             'change_db_y', '-changed_y.mat', ...
@@ -56,6 +60,7 @@ classdef DagNNTrainer < handle
             
             % print 'Load: ...'
             [~, filename, ext] = fileparts(props_filename);
+            % 2do - define function `print_between_dashlines`
             DagNNTrainer.print_dashline();
             fprintf(sprintf('Load: "%s\" file\n', [filename, ext]));
             DagNNTrainer.print_dashline();
@@ -68,7 +73,9 @@ classdef DagNNTrainer < handle
             % refine it such as convert column-vector to row-vector and
             % null to {}
             %
-            % filename: char vector
+            % Parameters
+            % ----------
+            % - filename: char vector
             %   path of configuration json file
             
             % decode json
@@ -235,6 +242,7 @@ classdef DagNNTrainer < handle
                         param_size = size(obj.net.params(param_index).value);
                         
                         obj.net.layers(i).block.set_kernel_size(param_size);
+                        % obj.net.layers(i).block.hasBias = DagNNTrainer.has_bias;
                     end
                 end
                 
@@ -460,106 +468,6 @@ classdef DagNNTrainer < handle
                     obj.net.getVarIndex(obj.props.net.vars.output.name) ...
                     ).value;
             end
-        end
-        
-        function run(obj)
-            % RUN runs the learing process contains 'forward', 'backward'
-            % and 'update' steps
-            
-            % init net
-            obj.init();
-            
-            % print epoch progress (last saved epoch)
-            obj.print_epoch_progress()
-            
-            obj.current_epoch = obj.current_epoch + 1;
-            
-            % epoch number that network has minimum cost on validation data
-            [~, index_min_val_cost] = min(obj.costs.val);
-            
-            n = length(obj.data.train.x);
-            batch_size = obj.props.learning.batch_size;
-            
-            % epoch loop
-            while obj.current_epoch <= obj.props.learning.number_of_epochs + 1
-                begin_time = cputime();
-                % shuffle train data
-                permuted_indexes = randperm(n);
-                
-                % batch loop
-                for start_index = 1:batch_size:n
-                    end_index = start_index + batch_size - 1;
-                    if end_index > n
-                        end_index = n;
-                    end
-                    
-                    indexes = permuted_indexes(start_index:end_index);
-                    % make batch data
-                    % - x
-                    input = ...
-                        DagNNTrainer.cell_array_to_tensor(...
-                        obj.data.train.x(indexes) ...
-                        );
-                    % - y
-                    expected_output = ...
-                        DagNNTrainer.cell_array_to_tensor(...
-                        obj.data.train.y(indexes) ...
-                        );
-                    
-                    % forward, backward step
-                    obj.net.eval(...
-                        {...
-                        obj.props.net.vars.input.name, input, ...
-                        obj.props.net.vars.expected_output.name, expected_output
-                        }, ...
-                        {obj.props.net.vars.cost.name, 1} ...
-                        );
-                    
-                    % update step
-                    for param_index = 1:length(obj.net.params)
-                        obj.net.params(param_index).value = ...
-                            obj.net.params(param_index).value - ...
-                            obj.props.learning.learning_rate * obj.net.params(param_index).der;
-                    end
-                    
-                    % print samples progress
-                    fprintf('Samples:\t%d-%d/%d\n', start_index, end_index, n);
-                end
-                
-                % elapsed times
-                obj.elapsed_times(end + 1) = cputime() - begin_time();
-                % costs
-                % - train
-                obj.costs.train(end + 1) = obj.get_train_cost();
-                % - val
-                obj.costs.val(end + 1) = obj.get_val_cost();
-                % - test
-                obj.costs.test(end + 1) = obj.get_test_cost();
-                
-                % no imporovement in number_of_val_fails steps
-                if obj.costs.val(end) < obj.costs.val(index_min_val_cost)
-                    index_min_val_cost = length(obj.costs.val);
-                end
-                
-                if (length(obj.costs.val) - index_min_val_cost) >= ...
-                        obj.props.learning.number_of_val_fails
-                    break;
-                end
-                
-                % print epoch progress
-                obj.print_epoch_progress()
-                
-                % save
-                % - costs
-                obj.save_costs();
-                % - elapsed times
-                obj.save_elapsed_times();
-                % - net
-                obj.save_current_epoch();
-                
-                % increament current epoch
-                obj.current_epoch = obj.current_epoch + 1;
-            end 
         end
         
         function load_best_val_epoch(obj)
@@ -916,6 +824,106 @@ classdef DagNNTrainer < handle
                 '-struct', 'params' ...
             );
             clear('params');
+        end
+        
+        function run(obj)
+            % RUN runs the learing process contains 'forward', 'backward'
+            % and 'update' steps
+            
+            % init net
+            obj.init();
+            
+            % print epoch progress (last saved epoch)
+            obj.print_epoch_progress()
+            
+            obj.current_epoch = obj.current_epoch + 1;
+            
+            % epoch number that network has minimum cost on validation data
+            [~, index_min_val_cost] = min(obj.costs.val);
+            
+            n = length(obj.data.train.x);
+            batch_size = obj.props.learning.batch_size;
+            
+            % epoch loop
+            while obj.current_epoch <= obj.props.learning.number_of_epochs + 1
+                begin_time = cputime();
+                % shuffle train data
+                permuted_indexes = randperm(n);
+                
+                % batch loop
+                for start_index = 1:batch_size:n
+                    end_index = start_index + batch_size - 1;
+                    if end_index > n
+                        end_index = n;
+                    end
+                    
+                    indexes = permuted_indexes(start_index:end_index);
+                    % make batch data
+                    % - x
+                    input = ...
+                        DagNNTrainer.cell_array_to_tensor(...
+                        obj.data.train.x(indexes) ...
+                        );
+                    % - y
+                    expected_output = ...
+                        DagNNTrainer.cell_array_to_tensor(...
+                        obj.data.train.y(indexes) ...
+                        );
+                    
+                    % forward, backward step
+                    obj.net.eval(...
+                        {...
+                        obj.props.net.vars.input.name, input, ...
+                        obj.props.net.vars.expected_output.name, expected_output
+                        }, ...
+                        {obj.props.net.vars.cost.name, 1} ...
+                        );
+                    
+                    % update step
+                    for param_index = 1:length(obj.net.params)
+                        obj.net.params(param_index).value = ...
+                            obj.net.params(param_index).value - ...
+                            obj.props.learning.learning_rate * obj.net.params(param_index).der;
+                    end
+                    
+                    % print samples progress
+                    fprintf('Samples:\t%d-%d/%d\n', start_index, end_index, n);
+                end
+                
+                % elapsed times
+                obj.elapsed_times(end + 1) = cputime() - begin_time();
+                % costs
+                % - train
+                obj.costs.train(end + 1) = obj.get_train_cost();
+                % - val
+                obj.costs.val(end + 1) = obj.get_val_cost();
+                % - test
+                obj.costs.test(end + 1) = obj.get_test_cost();
+                
+                % no imporovement in number_of_val_fails steps
+                if obj.costs.val(end) < obj.costs.val(index_min_val_cost)
+                    index_min_val_cost = length(obj.costs.val);
+                end
+                
+                if (length(obj.costs.val) - index_min_val_cost) >= ...
+                        obj.props.learning.number_of_val_fails
+                    break;
+                end
+                
+                % print epoch progress
+                obj.print_epoch_progress()
+                
+                % save
+                % - costs
+                obj.save_costs();
+                % - elapsed times
+                obj.save_elapsed_times();
+                % - net
+                obj.save_current_epoch();
+                
+                % increament current epoch
+                obj.current_epoch = obj.current_epoch + 1;
+            end 
         end
     end
     
