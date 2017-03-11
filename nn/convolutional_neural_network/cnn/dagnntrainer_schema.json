@@ -198,10 +198,10 @@
                                 "description": "Name of parameters",
                                 "oneOf": [
                                     {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
+                                        "type": "array"
+                                        // "items": {
+                                        //     "type": "string"
+                                        // }
                                     },
                                     {
                                         "type": "null"
