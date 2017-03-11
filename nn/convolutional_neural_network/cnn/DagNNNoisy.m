@@ -4,7 +4,7 @@ classdef DagNNNoisy < handle
     properties (Constant)
         base_props_dir = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\noisy\base_props';
         indexhtml_path = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\noisy\index.html';
-        snr = [-1];
+        snr = [-10];
         formattype = 'svg';
     end
     
@@ -110,7 +110,6 @@ classdef DagNNNoisy < handle
 
             cnn.plot_costs();
 
-            figure();
             DagNNTrainer.plot_digraph(props_filename);
         end
         
