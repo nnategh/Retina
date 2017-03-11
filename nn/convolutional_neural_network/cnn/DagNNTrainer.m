@@ -192,7 +192,7 @@ classdef DagNNTrainer < handle
             obj.current_epoch = max(epoch);
         end
         
-        function init_net(obj)
+        function init_net_old(obj)
             % INIT_NET initialzes 'net'
             
             % if there is no saved epoch file in 'bak' directory
@@ -205,6 +205,7 @@ classdef DagNNTrainer < handle
                     'relu', @dagnn.ReLU, ...
                     'minus', @dagnn.Minus, ...
                     'convrelu', @dagnn.ConvReLU, ...
+                    'convreluminus', @dagnn.ConvReLUMinus, ...
                     'convnorm', @dagnn.ConvNorm, ...
                     'convnormrelu', @dagnn.ConvNormReLU, ...
                     'convnormreluminus', @dagnn.ConvNormReLUMinus, ...
@@ -242,6 +243,120 @@ classdef DagNNTrainer < handle
                         param_size = size(obj.net.params(param_index).value);
                         
                         obj.net.layers(i).block.set_kernel_size(param_size);
+                        % obj.net.layers(i).block.hasBias = DagNNTrainer.has_bias;
+                    end
+                end
+                
+                % save first epoch in 'bak' directory
+                obj.save_current_epoch();
+            else
+                % load last saved epoch file in 'bak' directory
+                obj.load_current_epoch();
+            end
+        end
+        
+        function init_net(obj)
+            % INIT_NET initialzes 'net'
+            
+            % if there is no saved epoch file in 'bak' directory
+            if isempty(obj.current_epoch)
+                obj.current_epoch = 1;
+                % blocks
+                blocks = struct(...
+                    'conv', @dagnn.Conv, ...
+                    'norm', @dagnn.NormOverall, ...
+                    'relu', @dagnn.ReLU, ...
+                    'logsig', @dagnn.Sigmoid, ...
+                    'tansig', @dagnn.TanSigmoid, ...
+                    'minus', @dagnn.Minus, ...
+                    'convrelu', @dagnn.ConvReLU, ...
+                    'convreluminus', @dagnn.ConvReLUMinus, ...
+                    'convnorm', @dagnn.ConvNorm, ...
+                    'convnormrelu', @dagnn.ConvNormReLU, ...
+                    'convnormreluminus', @dagnn.ConvNormReLUMinus, ...
+                    'normrelu', @dagnn.NormReLU, ...
+                    'sum', @dagnn.Sum, ...
+                    'quadcost', @dagnn.QuadraticCost ...
+                    );
+                
+                % define object
+                obj.net = dagnn.DagNN();
+                % obj.net.conserveMemory = false;
+                
+                % add layers
+                layers = obj.props.net.layers;
+                for layer_index = 1:length(layers)
+                    layer = layers(layer_index);
+                    
+                    % type = subtype1 + subtype2 + ...
+                    sub_types = cellfun(...
+                        @strtrim, ...
+                        strsplit(layer.type, '+'), ...
+                        'UniformOutput', false ...
+                    );
+                    number_of_sub_types = length(sub_types);
+                    
+                    if number_of_sub_types == 1
+                        obj.net.addLayer(...
+                            layer.name, blocks.(layer.type)(), ...
+                            layer.inputs, ...
+                            layer.outputs, ...
+                            layer.params ...
+                        );
+                    else
+                        % sub inputs
+                        sub_inputs = cell(1, number_of_sub_types);
+                        sub_inputs{1} = layer.inputs;
+                        for sub_input_index = 2:number_of_sub_types
+                            sub_inputs{sub_input_index} = ...
+                                [layer.outputs{1}, '_', num2str(sub_input_index - 1)];
+                        end
+                        
+                        % sub outpus
+                        sub_outputs = {sub_inputs{2:end}, layer.outputs{1}};
+                        
+                        % sub params
+                        sub_params = cell(1, number_of_sub_types);
+                        for sub_param_index = 1:number_of_sub_types
+                            if isempty(layer.params{sub_param_index})
+                                sub_params{sub_param_index} = {};
+                            else
+                                sub_params{sub_param_index} = ...
+                                    layer.params{sub_param_index}';
+                            end
+                        end
+                        
+                        % add layers
+                        for sub_type_index = 1:number_of_sub_types
+                            sub_type = sub_types{sub_type_index};
+                            sub_input = sub_inputs{sub_type_index};
+                            sub_output = sub_outputs{sub_type_index};
+                            sub_param = sub_params{sub_type_index};
+                            
+                            obj.net.addLayer(...
+                                [layer.name, '_',  sub_type], blocks.(sub_type)(), ...
+                                sub_input, ...
+                                sub_output, ...
+                                sub_param ...
+                            );
+                        end
+                    end
+                end
+                
+                % init params
+                obj.init_params();
+                
+                % set 'size' property of 'Conv' blocks
+                for layer_index = 1:length(obj.net.layers)
+                    if startsWith(...
+                            class(obj.net.layers(layer_index).block), ...
+                            'dagnn.Conv' ...
+                            )
+                        param_name = obj.net.layers(layer_index).params{1};
+                        sub_param_index = obj.net.getParamIndex(param_name);
+                        param_size = size(obj.net.params(sub_param_index).value);
+                        
+                        obj.net.layers(layer_index).block.set_kernel_size(param_size);
                         % obj.net.layers(i).block.hasBias = DagNNTrainer.has_bias;
                     end
                 end
@@ -1001,7 +1116,7 @@ classdef DagNNTrainer < handle
             
             for l = 1 : length(props.net.layers)
                 layer = props.net.layers(l);
-                block = layer.name;
+                block = sprintf('%s(%s)', layer.name, layer.type);
                 
                 % add edges
                 % - inputs, block
@@ -1010,6 +1125,10 @@ classdef DagNNTrainer < handle
                     dg = addedge(dg, x, block);
                 end
                 % - params, block
+                if ~isempty(strfind(layer.type, '+'))
+                    % parms = {{'p1', 'p2'}, []} -> params = {'p1', 'p2'}
+                    layer.params = [layer.params{:}];
+                end
                 for i = 1 : length(layer.params)
                     w = layer.params(i);
                     dg = addedge(dg, w, block);
@@ -1042,6 +1161,14 @@ classdef DagNNTrainer < handle
             
             % make digraph
             dg = DagNNTrainer.make_digraph(filename);
+            
+            % figure
+            figure(...
+                'Name', 'Net', ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0, 0, 1, 1] ...
+            );
             
             % plot graph
             h = plot(dg);
@@ -1076,7 +1203,12 @@ classdef DagNNTrainer < handle
             ms = h.MarkerSize;
             blocks = {};
             for i = 1 : length(props.net.layers)
-                blocks{end + 1} = props.net.layers(i).name;
+                blocks{end + 1} = ...
+                    sprintf(...
+                        '%s(%s)', ...
+                        props.net.layers(i).name, ...
+                        props.net.layers(i).type ...
+                    );
             end
             highlight(h, ...
                 blocks, ...
@@ -1121,7 +1253,6 @@ classdef DagNNTrainer < handle
                 toc();
                 
                 % - plot net
-                figure();
                 DagNNTrainer.plot_digraph(props_filename);
             end
         end
