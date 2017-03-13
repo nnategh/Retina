@@ -4,7 +4,7 @@ classdef DagNNNoisy < handle
     properties (Constant)
         base_props_dir = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\noisy\base_props';
         indexhtml_path = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\noisy\index.html';
-        snr = [-10];
+        snr = [-1];
         formattype = 'svg';
     end
     
@@ -20,9 +20,9 @@ classdef DagNNNoisy < handle
         function make_db(props_filename, db_filename)
             % MAKE_DB
 
-            if exist(db_filename, 'file')
-                return
-            end
+%             if exist(db_filename, 'file')
+%                 return
+%             end
             
             cnn = DagNNTrainer(props_filename);
             cnn.init();
@@ -42,9 +42,9 @@ classdef DagNNNoisy < handle
         function make_params(props_filename, params_filename, snr)
             % MAKE_PARAMS
             
-            if exist(params_filename, 'file')
-                return
-            end
+%             if exist(params_filename, 'file')
+%                 return
+%             end
             
             % net
             cnn = DagNNTrainer(props_filename);
@@ -54,12 +54,6 @@ classdef DagNNNoisy < handle
             params = load(cnn.props.data.params_filename);
 
             % add white Gaussian noise to signal
-            
-%             for field = fieldnames(params)
-%                 params.(char(field)) = ...
-%                     awgn(params.(char(field)), snr, 'measured');
-%             end
-
             fields = fieldnames(params);
             for i = 1 : length(fields)
                 params.(fields{i}) = ...
