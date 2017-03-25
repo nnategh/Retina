@@ -316,6 +316,9 @@ classdef DagNNTrainer < handle
                         sub_outputs = {sub_inputs{2:end}, layer.outputs{1}};
                         
                         % sub params
+                        if isempty(layer.params)
+                            layer.params = cell(1, number_of_sub_types);
+                        end
                         sub_params = cell(1, number_of_sub_types);
                         for sub_param_index = 1:number_of_sub_types
                             if isempty(layer.params{sub_param_index})
@@ -1125,9 +1128,11 @@ classdef DagNNTrainer < handle
                     dg = addedge(dg, x, block);
                 end
                 % - params, block
-                if ~isempty(strfind(layer.type, '+'))
-                    % parms = {{'p1', 'p2'}, []} -> params = {'p1', 'p2'}
-                    layer.params = [layer.params{:}];
+                if ~isempty(layer.params)
+                    if ~isempty(strfind(layer.type, '+'))
+                        % parms = {{'p1', 'p2'}, []} -> params = {'p1', 'p2'}
+                        layer.params = [layer.params{:}];
+                    end
                 end
                 for i = 1 : length(layer.params)
                     w = layer.params(i);
