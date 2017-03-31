@@ -2,8 +2,8 @@ classdef DagNNNoisy < handle
     %DAGNNNOISY
     
     properties (Constant)
-        base_props_dir = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\noisy\base_props';
-        indexhtml_path = 'D:\PhD\MSU\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\noisy\index.html';
+        base_props_dir = 'E:/Documents/University/3. PhD/MSU/Neda/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/base_props';
+        indexhtml_path = 'E:/Documents/University/3. PhD/MSU/Neda/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/index.html';
         snr = [-1];
         formattype = 'svg';
     end
@@ -113,6 +113,9 @@ classdef DagNNNoisy < handle
             clear;
             clc;
             
+            % parameters
+            viz = DagNNViz();
+            
             run('vl_setupnn.m');
             
             for base_props_filename = DagNNNoisy.get_base_props_filenames(DagNNNoisy.base_props_dir)
@@ -194,7 +197,7 @@ classdef DagNNNoisy < handle
                     );
                 
                     % plot noisy/noiseless filters
-                    DagNNViz.plot_noisy_params(...
+                    viz.plot_noisy_params(...
                         props.data.params_filename, ...
                         params_filename, ...
                         fullfile(bak_dir, 'images'), ...
