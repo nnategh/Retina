@@ -1,5 +1,5 @@
 classdef DagNNNoisy < handle
-    %DAGNNNOISY
+    %A framework for training a dag with noisy parameters
     
     properties (Constant)
         base_props_dir = 'E:/Documents/University/3. PhD/MSU/Neda/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/base_props';
@@ -10,7 +10,12 @@ classdef DagNNNoisy < handle
     
     methods (Static)
         function base_props_filenames = get_base_props_filenames(base_props_dir)
-            % GET_BASE_PROPS_FILENAMES
+            % Get filenames of `base_props`
+            %
+            % Parameters
+            % ----------
+            % - base_props_dir: char vector
+            %   Path of directory containing `base_props` json files
             
             base_props_filenames = ...
                 dir(fullfile(base_props_dir, '*.json'));
@@ -18,11 +23,14 @@ classdef DagNNNoisy < handle
         end
         
         function make_db(props_filename, db_filename)
-            % MAKE_DB
-
-%             if exist(db_filename, 'file')
-%                 return
-%             end
+            % Makes a database based on a dag and save it
+            %
+            % Parameters
+            % ----------
+            % - props_filename: char vector
+            %   Path of dag properties filename
+            % - db_filename: char vector
+            %   Path of output database
             
             cnn = DagNNTrainer(props_filename);
             cnn.init();
@@ -40,11 +48,16 @@ classdef DagNNNoisy < handle
         end
         
         function make_params(props_filename, params_filename, snr)
-            % MAKE_PARAMS
-            
-%             if exist(params_filename, 'file')
-%                 return
-%             end
+            % Add noise to parameters of a dag and save it
+            %
+            % Parameters
+            % ----------
+            % - props_filename: char vector
+            %   Path of dag properties filename
+            % - params_filename: char vector
+            %   Path of dag parameters filename
+            % - snr: double
+            %   Signal to noise ratio in dB
             
             % net
             cnn = DagNNTrainer(props_filename);
@@ -75,7 +88,20 @@ classdef DagNNNoisy < handle
                 bak_dir, ...
                 props_filename ...
             )
-            % MAKE_PARAMS
+            % Make a dag properties file
+            %
+            % Parameters
+            % ----------
+            % - base_props_filename: char vector
+            %   Path of basic properties file
+            % - db_filename: char vector
+            %   Path of database
+            % - parame_filename: char vector
+            %   Path of parameters
+            % - bak_dir: char vector
+            %   Path of backup directory
+            % - props_filename: char vector
+            %   Path of output properties file
             
             % json
             % - decode
@@ -97,13 +123,20 @@ classdef DagNNNoisy < handle
         end
         
         function run_props(props_filename)
-            % RUN_PROPS
+            % Run a dag and plot `costs` and `diagraph`
+            %
+            % Parameters
+            % ----------
+            % - props_filename: char vector
+            %   Path of properties for defining dag
 
             cnn = DagNNTrainer(props_filename);
             cnn.run();
 
+            % Plot
+            %   - costs
             cnn.plot_costs();
-
+            %   - diagraph
             DagNNTrainer.plot_digraph(props_filename);
         end
         
@@ -197,10 +230,10 @@ classdef DagNNNoisy < handle
                     );
                 
                     % plot noisy/noiseless filters
+                    viz.output_dir = fullfile(bak_dir, 'images');
                     viz.plot_noisy_params(...
                         props.data.params_filename, ...
                         params_filename, ...
-                        fullfile(bak_dir, 'images'), ...
                         snr_value ...
                     )
                 end

@@ -1,5 +1,5 @@
 classdef DagNNViz < handle
-    %Class for visualization a 'DagNN'
+    %Visualize a 'DagNN'
     
     properties
         % Properties
