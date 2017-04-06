@@ -2,15 +2,15 @@ classdef DagNNNoisy < handle
     %A framework for training a dag with noisy parameters
     
     properties (Constant)
-        base_props_dir = 'E:/Documents/University/3. PhD/MSU/Neda/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/base_props';
-        indexhtml_path = 'E:/Documents/University/3. PhD/MSU/Neda/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/index.html';
+        base_props_dir = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/base_props';
+        indexhtml_path = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/index.html';
         snr = [-1];
         formattype = 'svg';
     end
     
     methods (Static)
         function base_props_filenames = get_base_props_filenames(base_props_dir)
-            % Get filenames of `base_props`
+            % Get filenames of `base_props` from given directory
             %
             % Parameters
             % ----------
@@ -23,12 +23,13 @@ classdef DagNNNoisy < handle
         end
         
         function make_db(props_filename, db_filename)
-            % Makes a database based on a dag and save it
+            % Make database based on dag (specivied by `props` file) 
+            % and save it
             %
             % Parameters
             % ----------
             % - props_filename: char vector
-            %   Path of dag properties filename
+            %   Path of dag properties file
             % - db_filename: char vector
             %   Path of output database
             
@@ -53,9 +54,9 @@ classdef DagNNNoisy < handle
             % Parameters
             % ----------
             % - props_filename: char vector
-            %   Path of dag properties filename
+            %   Path of dag properties file
             % - params_filename: char vector
-            %   Path of dag parameters filename
+            %   Path of output dag parameters file
             % - snr: double
             %   Signal to noise ratio in dB
             
@@ -151,9 +152,12 @@ classdef DagNNNoisy < handle
             
             run('vl_setupnn.m');
             
-            for base_props_filename = DagNNNoisy.get_base_props_filenames(DagNNNoisy.base_props_dir)
-                base_props_filename = ...
-                    fullfile(DagNNNoisy.base_props_dir, char(base_props_filename));
+            base_props_filenames = DagNNNoisy.get_base_props_filenames(DagNNNoisy.base_props_dir);
+            for i = 1:numel(base_props_filenames)
+                base_props_filename = fullfile(...
+                    DagNNNoisy.base_props_dir, ...
+                    base_props_filenames{i} ...
+                );
                 
                 [pathstr, ~, ~] = fileparts(DagNNNoisy.base_props_dir);
                 [~, name, ~] = fileparts(base_props_filename);
@@ -242,4 +246,3 @@ classdef DagNNNoisy < handle
     end
     
 end
-

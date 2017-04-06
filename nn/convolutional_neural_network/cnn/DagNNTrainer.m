@@ -1089,6 +1089,7 @@ classdef DagNNTrainer < handle
             fprintf('\n');
         end
         
+        % todo: save diagraph
         function dg = make_digraph(filename)
             % MAKE_DIGRAPH makes a directed-graph based on given 'json' file
             %
