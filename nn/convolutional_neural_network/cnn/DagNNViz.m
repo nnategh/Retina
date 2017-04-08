@@ -1538,6 +1538,26 @@ classdef DagNNViz < handle
         end
     end
     methods (Static)
+        function print_dashline(length)
+            % Print specified length dash-line
+            %
+            % Parameters
+            % ----------
+            % - length: int
+            %   Length of printed dash-line
+            %
+            % Examples
+            % --------
+            % 1.
+            %   >>> DagNNViz.print_dashline(5)
+            %   -----
+            
+            if ~exist('length', 'var')
+                length = 32;
+            end
+            
+            fprintf('%s\n', repmat('-', 1, length));
+        end
         function print_title(text)
             % Print `text` in command window
             %
@@ -1547,7 +1567,7 @@ classdef DagNNViz < handle
             %   Text of title
             
             fprintf('%s\n', text);
-            fprintf('%s\n', repmat('-', size(text)));
+            DagNNViz.print_dashline(numel(text));
         end
         
         function plot_spike_trains(spike_trains, number_of_time_ticks, time_limits)
