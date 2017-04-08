@@ -23,7 +23,7 @@ classdef DagNNViz < handle
         bak_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\fig4.2\bak_200_0.0001';
         data_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11';
         output_dir = '';
-        formattype = 'epsc';
+        formattype = 'svg';
         showtitle = true;
         round_digits = 3;
     end
@@ -1536,6 +1536,90 @@ classdef DagNNViz < handle
                 '' ...
             );
         end
+        
+        % todo: correct documetation
+        function plot_digraph(obj, filename)
+            % Plot a directed-graph based on given `json` file
+            %
+            % Parameters
+            % ----------
+            % - filename : char vector
+            %   Filename of input `json` file
+            %
+            % Examples
+            % --------
+            % 1.
+            %   >>> filename = './dagnn.json';
+            %   >>> dg = DagNNTrainer.plot_digraph(dagnn_filename);
+            %   ...
+            
+            % read 'json' file
+            props = jsondecode(fileread(filename));
+            
+            % make digraph
+            dg = DagNNViz.make_digraph(filename);
+            
+            % figure
+            figure(...
+                'Name', 'Net', ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0, 0, 1, 1] ...
+            );
+            
+            % plot graph
+            h = plot(dg);
+            
+            % layout
+            layout(h, 'layered', ...
+                'Direction', 'right', ...
+                'Sources', props.net.vars.input.name, ...
+                'Sinks', props.net.vars.cost.name, ...
+                'AssignLayers', 'asap' ...
+            );
+            
+            % highlight
+            % - input, output
+            highlight(h, ...
+                {...
+                    props.net.vars.input.name, ...
+                    props.net.vars.expected_output.name ...
+                }, ...
+                'NodeColor', 'red' ...
+            );
+            % - params
+            params = {};
+            for i = 1 : length(props.net.params)
+                params{end + 1} = props.net.params(i).name;
+            end
+            highlight(h, ...
+                params, ...
+                'NodeColor', 'green' ...
+            );
+            % - blocks
+            ms = h.MarkerSize;
+            blocks = {};
+            for i = 1 : length(props.net.layers)
+                blocks{end + 1} = ...
+                    sprintf(...
+                        '%s', ...
+                        props.net.layers(i).type ...
+                    );
+            end
+            highlight(h, ...
+                blocks, ...
+                'Marker', 's', ...
+                'MarkerSize', 5 * ms ...
+            );
+            % hide axes
+            set(h.Parent, ...
+                'XTick', [], ...
+                'YTick', [] ...
+            );
+        
+            % save
+            obj.saveas('net');
+        end
     end
     methods (Static)
         function print_dashline(length)
@@ -1558,6 +1642,7 @@ classdef DagNNViz < handle
             
             fprintf('%s\n', repmat('-', 1, length));
         end
+        
         function print_title(text)
             % Print `text` in command window
             %
@@ -1660,6 +1745,63 @@ classdef DagNNViz < handle
             end
         end
         
+         % todo: save diagraph
+        function dg = make_digraph(filename)
+            % Make a directed-graph based on given `json` file
+            %
+            % Parameters
+            % ----------
+            % - filename : char vector
+            %   Filename of input `json` file
+            %
+            % Returns
+            % - dg : digraph
+            %   Directed graph
+            %
+            % Examples
+            % --------
+            % 1.
+            %   >>> filename = './dagnn.json';
+            %   >>> dg = DagNNTrainer.make_digraph(dagnn_filename);
+            %   >>> dg.Edges
+            %    EndNodes
+            %   __________
+            %      ...
+            
+            % read 'json' file
+            props = jsondecode(fileread(filename));
+            
+            % add layers to digraph
+            dg = digraph();
+            
+            for layer = props.net.layers'
+                block = sprintf('%s', layer.type);
+                
+                % add edges
+                % - inputs, block
+                for i = 1 : length(layer.inputs)
+                    x = layer.inputs(i);
+                    dg = addedge(dg, x, block);
+                end
+                % - params, block
+                if ~isempty(layer.params)
+                    if ~isempty(strfind(layer.type, '+'))
+                        % parms = {{'p1', 'p2'}, []} -> params = {'p1', 'p2'}
+                        layer.params = [layer.params{:}];
+                    end
+                end
+                for i = 1 : length(layer.params)
+                    w = layer.params(i);
+                    dg = addedge(dg, w, block);
+                end
+                % - block, outputs
+                for i = 1 : length(layer.outputs)
+                    y = layer.outputs(i);
+                    dg = addedge(dg, block, y);
+                end
+            end
+        end
+        
         function plot_data()
             % Plot data
             
@@ -1735,6 +1877,9 @@ classdef DagNNViz < handle
             costs = load(fullfile(bak_dir, 'costs.mat'));
             % - plot
             viz.plot_costs(costs);
+            
+            % net
+            viz.plot_digraph(props_filename);
 
             % params
             viz.plot_params(...

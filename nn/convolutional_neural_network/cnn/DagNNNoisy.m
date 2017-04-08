@@ -10,13 +10,10 @@ classdef DagNNNoisy < handle
         %   Path of `index.html` file
         % - snr: double array
         %   Each item is signal to noise ratio in dB
-        % - formattype: char vector
-        %   File format such as `epsc`, `pdf`, `svg`, `png` or ...
 
         base_props_dir = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/base_props';
         indexhtml_path = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/index.html';
         snr = [-1];
-        formattype = 'svg';
     end
     
     methods
@@ -111,11 +108,11 @@ classdef DagNNNoisy < handle
                     % make images
                     DagNNViz.plot_results(props_filename);
                     
-                    % copy net.svg
-                    copyfile(...
-                        fullfile(obj.base_props_dir, [name, '.svg']), ...
-                        fullfile(bak_dir, 'images', 'net.svg') ...
-                    );
+%                     % copy net.svg
+%                     copyfile(...
+%                         fullfile(obj.base_props_dir, [name, '.svg']), ...
+%                         fullfile(bak_dir, 'images', 'net.svg') ...
+%                     );
                 
                     % copy index.html
                     copyfile(...
@@ -247,12 +244,6 @@ classdef DagNNNoisy < handle
 
             cnn = DagNNTrainer(props_filename);
             cnn.run();
-
-            % Plot
-            %   - costs
-            cnn.plot_costs();
-            %   - diagraph
-            DagNNTrainer.plot_digraph(props_filename);
         end
         
         function main()

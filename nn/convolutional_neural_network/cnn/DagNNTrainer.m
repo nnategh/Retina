@@ -1044,145 +1044,6 @@ classdef DagNNTrainer < handle
             end
         end
         
-        % todo: save diagraph
-        function dg = make_digraph(filename)
-            % Make a directed-graph based on given `json` file
-            %
-            % Parameters
-            % ----------
-            % - filename : char vector
-            %   Filename of input `json` file
-            %
-            % Returns
-            % - dg : digraph
-            %   Directed graph
-            %
-            % Examples
-            % --------
-            % 1.
-            %   >>> filename = './dagnn.json';
-            %   >>> dg = DagNNTrainer.make_digraph(dagnn_filename);
-            %   >>> dg.Edges
-            %    EndNodes
-            %   __________
-            %      ...
-            
-            % read 'json' file
-            props = jsondecode(fileread(filename));
-            
-            % add layers to digraph
-            dg = digraph();
-            
-            for l = 1 : length(props.net.layers)
-                layer = props.net.layers(l);
-                block = sprintf('%s(%s)', layer.name, layer.type);
-                
-                % add edges
-                % - inputs, block
-                for i = 1 : length(layer.inputs)
-                    x = layer.inputs(i);
-                    dg = addedge(dg, x, block);
-                end
-                % - params, block
-                if ~isempty(layer.params)
-                    if ~isempty(strfind(layer.type, '+'))
-                        % parms = {{'p1', 'p2'}, []} -> params = {'p1', 'p2'}
-                        layer.params = [layer.params{:}];
-                    end
-                end
-                for i = 1 : length(layer.params)
-                    w = layer.params(i);
-                    dg = addedge(dg, w, block);
-                end
-                % - block, outputs
-                for i = 1 : length(layer.outputs)
-                    y = layer.outputs(i);
-                    dg = addedge(dg, block, y);
-                end
-            end
-        end
-        
-        function plot_digraph(filename)
-            % Plot a directed-graph based on given `json` file
-            %
-            % Parameters
-            % ----------
-            % - filename : char vector
-            %   Filename of input `json` file
-            %
-            % Examples
-            % --------
-            % 1.
-            %   >>> filename = './dagnn.json';
-            %   >>> dg = DagNNTrainer.plot_digraph(dagnn_filename);
-            %   ...
-            
-            % read 'json' file
-            props = jsondecode(fileread(filename));
-            
-            % make digraph
-            dg = DagNNTrainer.make_digraph(filename);
-            
-            % figure
-            figure(...
-                'Name', 'Net', ...
-                'NumberTitle', 'off', ...
-                'Units', 'normalized', ...
-                'OuterPosition', [0, 0, 1, 1] ...
-            );
-            
-            % plot graph
-            h = plot(dg);
-            
-            % layout
-            layout(h, 'layered', ...
-                'Direction', 'right', ...
-                'Sources', props.net.vars.input.name, ...
-                'Sinks', props.net.vars.cost.name, ...
-                'AssignLayers', 'asap' ...
-            );
-            
-            % highlight
-            % - input, output
-            highlight(h, ...
-                {...
-                    props.net.vars.input.name, ...
-                    props.net.vars.expected_output.name ...
-                }, ...
-                'NodeColor', 'red' ...
-            );
-            % - params
-            params = {};
-            for i = 1 : length(props.net.params)
-                params{end + 1} = props.net.params(i).name;
-            end
-            highlight(h, ...
-                params, ...
-                'NodeColor', 'green' ...
-            );
-            % - blocks
-            ms = h.MarkerSize;
-            blocks = {};
-            for i = 1 : length(props.net.layers)
-                blocks{end + 1} = ...
-                    sprintf(...
-                        '%s(%s)', ...
-                        props.net.layers(i).name, ...
-                        props.net.layers(i).type ...
-                    );
-            end
-            highlight(h, ...
-                blocks, ...
-                'Marker', 's', ...
-                'MarkerSize', 5 * ms ...
-            );
-            % hide axes
-            set(h.Parent, ...
-                'XTick', [], ...
-                'YTick', [] ...
-            );
-        end
-        
         function obj = load(filename)
             % Load `DagNNTrainer` from file
             
@@ -1190,7 +1051,7 @@ classdef DagNNTrainer < handle
             obj = obj.(char(fieldnames(obj)));
         end
         
-        function test()
+        function test1()
             % setup `matconvnet`
             run('vl_setupnn.m');
             
@@ -1215,6 +1076,12 @@ classdef DagNNTrainer < handle
                 % - plot net
                 DagNNTrainer.plot_digraph(props_filename);
             end
+        end
+        
+        function test
+            % Test `DagNNTrainer` class
+            suite = testsuite('./tests/TestDagNNTrainer.m');
+            suite.run();
         end
     end 
 end
