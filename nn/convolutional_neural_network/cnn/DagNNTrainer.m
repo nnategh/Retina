@@ -1,29 +1,31 @@
 classdef DagNNTrainer < handle
-    %DAGNNTRAINER implements a trainer for DagNN
+    %Trainer for DagNN
     
     properties
-        % - props: struct base on dagnntrainer_schema.json
-        %       properties of cnn contains configuration of 'data', 'net'
-        %       and 'learning' parameters
+        % - props: struct base on `dagnntrainer_schema.json`
+        %   Properties of cnn contains configuration of 'data', 'net'
+        %   and 'learning' parameters
         % - db: struct('x', cell array, 'y', cell array)
-        %       database
+        %   Database
         % - current_epoch : int
-        %       current epoch
+        %   Current epoch
         % - net: DagNN
-        %       Dag convolutional neural network
+        %   Dag convolutional neural network
         % - data: struct(...
         %           'train', struct('x', cell array, 'y', cell array), ...
         %           'val', struct('x', cell array, 'y', cell array), ...
         %           'test', struct('x', cell array, 'y', cell array) ...
         %         )
-        %       contains 'train', 'val' and 'test' data
+        %   Contains 'train', 'val' and 'test' data
         % - costs: stuct(...
         %           'train', double array, ...
         %           'val', double array, ...
         %           'test', double array ...
         %          )
+        %   History of `costs` for `training`, `validation` and `testing`
+        %   data-sets
         % - elapsed_times: double array
-        %       array of elased times
+        %   Array of elased times
         props
         db
         current_epoch
@@ -35,14 +37,13 @@ classdef DagNNTrainer < handle
     
     properties (Constant)
         % - props_dir: char vector
-        %   path of properties json files
+        %   Path of properties json files
         % - has_bias: logical
         %   True if `dagnn.Conv` has bias
         
         props_dir = './data/props';
-        
         has_bias = false;
-
+        % todo: must be documented
         format_spec = struct(...
             'change_db_y', '-changed_y.mat', ...
             'noisy_params', '-snr_%d.mat' ...
@@ -51,32 +52,32 @@ classdef DagNNTrainer < handle
     
     methods
         function obj = DagNNTrainer(props_filename)
-            %DAGNNTRAINER constructor of 'DagNNTrainer' class
+            %Constructor
             %
             % Parameters
             % ----------
             % - props_filename: char vector
-            %   path of configuration json file
+            %   Path of configuration json file
             
             % print 'Load: ...'
             [~, filename, ext] = fileparts(props_filename);
-            % 2do - define function `print_between_dashlines`
-            DagNNTrainer.print_dashline();
-            fprintf(sprintf('Load: "%s\" file\n', [filename, ext]));
-            DagNNTrainer.print_dashline();
+            DagNNViz.print_title(...
+                sprintf('Load: "%s\" file', [filename, ext])...
+            );
             
             obj.init_props(props_filename);
         end
         
+        % todo: handle this in `init_net` method
         function init_props(obj, filename)
-            % INIT_PROPS read 'props' from the configuration json file and
+            % Read `props` from the configuration json file and
             % refine it such as convert column-vector to row-vector and
             % null to {}
             %
             % Parameters
             % ----------
             % - filename: char vector
-            %   path of configuration json file
+            %   Path of configuration json file
             
             % decode json
             obj.props = jsondecode(fileread(filename));
@@ -119,7 +120,7 @@ classdef DagNNTrainer < handle
         end
         
         function init_db(obj)
-            % INIT_DB initialzes 'db' from the 'db_filename'
+            % Initialze 'db' from the 'db_filename'
             
             % db
             % - load
@@ -131,7 +132,7 @@ classdef DagNNTrainer < handle
         end
         
         function standardize_db(obj)
-            % STANDARDIZE_DB makes db zero-mean and unit-variance
+            % Make db zero-mean and unit-variance
             
             % db
             % - x
@@ -159,7 +160,7 @@ classdef DagNNTrainer < handle
         end
         
         function resize_db(obj)
-            % RESIZE_DB resizes 'db.x' and 'db.y'
+            % Resize 'db.x' and 'db.y'
             
             % resize
             % - db.x
@@ -175,7 +176,7 @@ classdef DagNNTrainer < handle
         end
         
         function init_bak_dir(obj)
-            % INIT_BAK_DIR initializes 'bak' directory from the 'bak_dir'
+            % Initialize `bak` directory with `bak_dir`
             
             if ~exist(obj.props.data.bak_dir, 'dir')
                 mkdir(obj.props.data.bak_dir);
@@ -183,85 +184,25 @@ classdef DagNNTrainer < handle
         end
         
         function init_current_epoch(obj)
-            % INIT_CURRENT_EPOCH initializes 'current_epoch' based on last
-            % saved epoch in the 'bak' directory
+            % Initialize `current_epoch` based on last
+            % saved epoch in the `bak` directory
             
             list = dir(fullfile(obj.props.data.bak_dir, 'epoch_*.mat'));
+            % todo: [\d] -> \d
             tokens = regexp({list.name}, 'epoch_([\d]+).mat', 'tokens');
             epoch = cellfun(@(x) sscanf(x{1}{1}, '%d'), tokens);
             obj.current_epoch = max(epoch);
         end
         
-        function init_net_old(obj)
-            % INIT_NET initialzes 'net'
-            
-            % if there is no saved epoch file in 'bak' directory
-            if isempty(obj.current_epoch)
-                obj.current_epoch = 1;
-                % blocks
-                blocks = struct(...
-                    'conv', @dagnn.Conv, ...
-                    'norm', @dagnn.NormOverall, ...
-                    'relu', @dagnn.ReLU, ...
-                    'minus', @dagnn.Minus, ...
-                    'convrelu', @dagnn.ConvReLU, ...
-                    'convreluminus', @dagnn.ConvReLUMinus, ...
-                    'convnorm', @dagnn.ConvNorm, ...
-                    'convnormrelu', @dagnn.ConvNormReLU, ...
-                    'convnormreluminus', @dagnn.ConvNormReLUMinus, ...
-                    'normrelu', @dagnn.NormReLU, ...
-                    'sum', @dagnn.Sum, ...
-                    'quadcost', @dagnn.QuadraticCost ...
-                    );
-                
-                % define object
-                obj.net = dagnn.DagNN();
-                % obj.net.conserveMemory = false;
-                
-                % add layers
-                layers = obj.props.net.layers;
-                for i = 1:length(layers)
-                    obj.net.addLayer(...
-                        layers(i).name, blocks.(layers(i).type)(), ...
-                        layers(i).inputs, ...
-                        layers(i).outputs, ...
-                        layers(i).params ...
-                        );
-                end
-                
-                % init params
-                obj.init_params();
-                
-                % set 'size' property of 'Conv' blocks
-                for i = 1:length(obj.net.layers)
-                    if startsWith(...
-                            class(obj.net.layers(i).block), ...
-                            'dagnn.Conv' ...
-                            )
-                        param_name = obj.net.layers(i).params{1};
-                        param_index = obj.net.getParamIndex(param_name);
-                        param_size = size(obj.net.params(param_index).value);
-                        
-                        obj.net.layers(i).block.set_kernel_size(param_size);
-                        % obj.net.layers(i).block.hasBias = DagNNTrainer.has_bias;
-                    end
-                end
-                
-                % save first epoch in 'bak' directory
-                obj.save_current_epoch();
-            else
-                % load last saved epoch file in 'bak' directory
-                obj.load_current_epoch();
-            end
-        end
-        
         function init_net(obj)
-            % INIT_NET initialzes 'net'
+            % Initialze `net`
             
             % if there is no saved epoch file in 'bak' directory
             if isempty(obj.current_epoch)
                 obj.current_epoch = 1;
                 % blocks
+                % todo: convert `blocks` to static member
+                % todo: remove `convrelu`, `convreluminus`, and ...
                 blocks = struct(...
                     'conv', @dagnn.Conv, ...
                     'norm', @dagnn.NormOverall, ...
@@ -280,6 +221,7 @@ classdef DagNNTrainer < handle
                     );
                 
                 % define object
+                % todo: Add `dagnn` to path
                 obj.net = dagnn.DagNN();
                 % obj.net.conserveMemory = false;
                 
@@ -360,20 +302,21 @@ classdef DagNNTrainer < handle
                         param_size = size(obj.net.params(sub_param_index).value);
                         
                         obj.net.layers(layer_index).block.set_kernel_size(param_size);
+                        % todo: solve problem of `has_bias`
                         % obj.net.layers(i).block.hasBias = DagNNTrainer.has_bias;
                     end
                 end
                 
-                % save first epoch in 'bak' directory
+                % save first epoch in `bak` directory
                 obj.save_current_epoch();
             else
-                % load last saved epoch file in 'bak' directory
+                % load last saved epoch file in `bak` directory
                 obj.load_current_epoch();
             end
         end
         
         function init_data(obj)
-            % INIT_DATA divide 'db' based on 'train_val_test_ratios' and
+            % Divide `db` based on `train_val_test_ratios` and
             % initializes 'data'
             
             % number of samples
@@ -422,7 +365,7 @@ classdef DagNNTrainer < handle
         end
         
         function init_params(obj)
-            % INIT_PARAMS initializes obj.net.params from 'params_filename'
+            % Initialize obj.net.params from `params_filename`
             
             params = obj.props.net.params;
             weights = load(obj.props.data.params_filename);
@@ -433,7 +376,7 @@ classdef DagNNTrainer < handle
         end
         
         function init_meta(obj)
-            % INIT_META set obj.net.meta
+            % Set obj.net.meta
             
 %             obj.net.meta = struct(...
 %                 'learning_rate', obj.props.learning.learning_rate, ...
@@ -444,57 +387,77 @@ classdef DagNNTrainer < handle
         end
         
         function cost = get_cost(obj, x, y)
-            % GET_COST computes mean cost of net based on input 'x' and
-            % expected-output 'y'
+            % Compute mean cost of net based on input `x` and
+            % expected-output `y`
             %
             % Parameters
             % ----------
             % - x: cell array
-            %   input
+            %   Input
             % - y: cell array
-            %   expected-output
+            %   Expected-output
+            %
+            % Returns
+            % -------
+            % - cost: double
+            %   Cost of net based on given inputs
             
-            n = length(x);
+            n = numel(x);
             cost = 0;
             for i = 1:n
                 obj.net.eval({...
                     obj.props.net.vars.input.name, x{i}, ...
                     obj.props.net.vars.expected_output.name, y{i} ...
-                    });
+                });
                 
                 cost = cost + obj.net.vars(...
                     obj.net.getVarIndex(obj.props.net.vars.cost.name) ...
-                    ).value;
+                ).value;
             end
             
             cost = cost / n;
         end
         
         function train_cost = get_train_cost(obj)
-            % GET_TRAIN_COST get cost of training data
+            % Get cost of training data
+            %
+            % Returns
+            % -------
+            % - train_cost: double
+            %   Cost of net for `training` data-set
             
             train_cost = ...
                 obj.get_cost(obj.data.train.x, obj.data.train.y);
         end
         
         function val_cost = get_val_cost(obj)
-            % GET_VAL_COST get cost of validation data
+            % Get cost of validation data
+            %
+            % Returns
+            % -------
+            % - val_cost: double
+            %   Cost of net for `validation` data-set
             
             val_cost = ...
                 obj.get_cost(obj.data.val.x, obj.data.val.y);
         end
         
         function test_cost = get_test_cost(obj)
-            % GET_TEST_COST get cost of test data
+            % Get cost of test data
+            %
+            % Returns
+            % -------
+            % - test_cost: double
+            %   Cost of net for `testing` data-set
             
             test_cost = ...
                 obj.get_cost(obj.data.test.x, obj.data.test.y);
         end
         
         function init_costs(obj)
-            % INIT_COSTS initializes 'costs'
+            % Initialize `obj.costs`
             
-            % if 'costs.mat' file exists in 'bak' directory
+            % if `costs.mat` file exists in `bak` directory
             if exist(obj.get_costs_filename(), 'file')
                 obj.load_costs();
                 obj.costs.train = ...
@@ -520,9 +483,9 @@ classdef DagNNTrainer < handle
         end
         
         function init_elapsed_times(obj)
-            % INIT_ELAPSED_TIMES initializes 'elapsed_times'
+            % Initialize `elapsed_times`
             
-            % if 'elapsed_times' file exists in 'bak' directory
+            % if `elapsed_times` file exists in `bak` directory
             if exist(obj.get_elapsed_times_filename(), 'file')
                 obj.load_elapsed_times();
                 obj.elapsed_times = ...
@@ -534,7 +497,7 @@ classdef DagNNTrainer < handle
         end
         
         function init(obj)
-            % INIT initializes properties
+            % Initialize properties
             
             % db
             obj.init_db();
@@ -567,39 +530,42 @@ classdef DagNNTrainer < handle
         end
         
         function y = out(obj, x)
-            % OUT computes estimated-outputs of network based on given
-            % inputs
+            % Compute `estimated-outputs` of network based on given
+            % `inputs`
             %
             % Parameters
             % ----------
             % - x: cell array
-            %   input
+            %   Input
+            % - y: cell array
+            %   Actual output
             
-            n = length(x);
+            n = numel(x);
             y = cell(n, 1);
             for i = 1:n
                 obj.net.eval({...
                     obj.props.net.vars.input.name, x{i} ...
-                    });
+                });
                 
                 y{i} = obj.net.vars(...
                     obj.net.getVarIndex(obj.props.net.vars.output.name) ...
-                    ).value;
+                ).value;
             end
         end
         
         function load_best_val_epoch(obj)
-            % LOAD_BEST_VAL_EPOCH loads best validation performance saved
-            % epoch
+            % Load best validation performance among saved epochs
             
             % update current-epoch
             [~, obj.current_epoch] = min(obj.costs.val);
             % init-net
+            % todo: efficient way to change the net based on just `currnt
+            % epoch`
             obj.init_net();
         end
         
         function print_epoch_progress(obj)
-            % PRINT_EPOCH_PROGRESS print progress, after each batch
+            % Print progress, after each batch
             %
             % Examples
             % --------
@@ -611,7 +577,7 @@ classdef DagNNTrainer < handle
             %   Time:	... s
             %   --------------------------------
             
-            DagNNTrainer.print_dashline();
+            DagNNViz.print_dashline();
             fprintf('Epoch:\t%d\n', obj.current_epoch);
             fprintf('Costs:\t[%.3f, %.3f, %.3f]\n', ...
                 obj.costs.train(end), ...
@@ -620,11 +586,12 @@ classdef DagNNTrainer < handle
                 );
             fprintf('Time:\t%f s\n', ...
                 obj.elapsed_times(obj.current_epoch));
-            DagNNTrainer.print_dashline();
+            DagNNViz.print_dashline();
         end
         
+        % todo: Must be removed or change to `real time` plot
         function plot_costs(obj)
-            % PLOT_COSTS plots 'costs' over time
+            % Plot `costs` over time
             
             epochs = 1:length(obj.costs.train);
             epochs = epochs - 1; % start from zero (0, 1, 2, ...)
@@ -705,52 +672,57 @@ classdef DagNNTrainer < handle
         end
         
         function filename = get_current_epoch_filename(obj)
-            % GET_CURRENTJ_EPOCH_FILENAME returns path of current epoch
-            % saved file in 'bak' directory
+            % Get path of `current epoch`
+            % saved file in `bak` directory
+            %
+            % Returns
+            % -------
+            % - filename: char vector
             
             filename = fullfile(...
                 obj.props.data.bak_dir, ...
                 sprintf('epoch_%d', obj.current_epoch) ...
-                );
+            );
         end
         
         function save_current_epoch(obj)
-            % SAVE_CURRENT_EPOCH saves 'net' of current-epoch in 'bak'
+            % Save `net` of current-epoch in `bak`
             % directory
             
             net_struct = obj.net.saveobj();
             save(...
                 obj.get_current_epoch_filename(), ...
                 '-struct', 'net_struct' ...
-                ) ;
+            ) ;
             
             clear('net_struct');
         end
         
         function load_current_epoch(obj)
-            % LOAD_CURRENT_EPOCH loads 'net' of current-epoch from 'bak'
+            % Load `net` of current-epoch from `bak`
             % directory
             
             net_struct = load(...
                 obj.get_current_epoch_filename() ...
-                ) ;
+            );
             
             obj.net = dagnn.DagNN.loadobj(net_struct) ;
             clear('net_struct');
         end
         
         function filename = get_costs_filename(obj)
-            % GET_COSTS_FILENAME returns path of 'costs.mat' saved file in
-            % 'bak' directory
+            % Return path of `costs.mat` saved file in
+            % `bak` directory
             
             filename = fullfile(...
                 obj.props.data.bak_dir, ...
                 'costs.mat' ...
-                );
+            );
         end
         
+        % todo: save `costs` in `meta` data of each epoch
         function save_costs(obj)
-            % SAVE_COSTS saves 'costs.mat' in 'bak' directory
+            % Save `costs.mat` in `bak` directory
             
             costs = obj.costs;
             
@@ -758,97 +730,97 @@ classdef DagNNTrainer < handle
                 obj.get_costs_filename(), ...
                 '-struct', ...
                 'costs' ...
-                );
+            );
             
             clear('costs');
         end
         
         function load_costs(obj)
-            % LOAD_COSTS loads 'costs.mat' from 'bak' directory
+            % Load `costs.mat` from `bak` directory
             
             obj.costs = load(obj.get_costs_filename());
         end
         
         function filename = get_db_indexes_filename(obj)
-            % GET_DB_INDEXES_FILENAME returns path of 'db_indexes.mat'
-            % saved file in 'bak' directory
+            % Return path of `db_indexes.mat`
+            % saved file in `bak` directory
             
             filename = fullfile(...
                 obj.props.data.bak_dir, ...
                 'db_indexes.mat' ...
-                );
+            );
         end
         
         function save_db_indexes(obj, indexes)
-            % SAVE_DB_INDEXES saves 'db_indexes.mat' in 'bak' directory
+            % Save `db_indexes.mat` in `bak` directory
             
             db_indexes = indexes;
             save(...
                 obj.get_db_indexes_filename(), ...
                 'db_indexes' ...
-                );
+            );
         end
         
         function db_indexes = load_db_indexes(obj)
-            % SAVE_DB_INDEXES loads 'db_indexes.mat' from 'bak' directory
+            % Loads `db_indexes.mat` from `bak` directory
             
             db_indexes = getfield(...
                 load(obj.get_db_indexes_filename()), ...
                 'db_indexes' ...
-                );
+            );
         end
         
         function filename = get_elapsed_times_filename(obj)
-            % GET_ELAPSED_TIMES_FILENAME returns path of 'elapsed_times.mat'
-            % saved file in 'bak' directory
+            % Return path of `elapsed_times.mat`
+            % saved file in `bak` directory
             
             filename = fullfile(...
                 obj.props.data.bak_dir, ...
                 'elapsed_times.mat' ...
-                );
+            );
         end
         
+        % todo: save `elapsed times` in `meta` data of each epoch
         function save_elapsed_times(obj)
-            % SAVE_ELAPSED_TIMES saves 'elapsed_times' in 'bak' directory
+            % Save `elapsed_times` in `bak` directory
             
             elapsed_times = obj.elapsed_times;
             save(...
                 obj.get_elapsed_times_filename(), ...
                 'elapsed_times' ...
-                );
+            );
             
             clear('elapsed_times');
         end
         
         function load_elapsed_times(obj)
-            % LOAD_ELAPSED_TIMES loads 'elapsed_times.mat' from 'bak'
-            % directory
+            % Load `elapsed_times.mat` from `bak` directory
             
             obj.elapsed_times = getfield(...
                 load(obj.get_elapsed_times_filename()), ...
                 'elapsed_times' ...
-                );
+            );
         end
         
         function save(obj, filename)
-            % SAVE saves the 'DagNNTrainer' object
+            % Save the `DagNNTrainer` object
             
             save(filename, 'obj');
         end
         
-        %todo: split to 'db', 'params'
+        %todo: split to `db`, `params`
         function make_random_data_old(obj, number_of_samples, generator)
-            % MAKE_RANDOM_DATA make random 'db' and 'params' files.
+            % Make random `db` and `params` files
             %
-            %   Parameters
-            %   ----------
-            %   - number_of_samples : int
-            %       number of training data
-            %   - generator : handle function (default is @rand)
-            %       generator function such as 'rand', 'randn', ...
+            % Parameters
+            % ----------
+            % - number_of_samples : int
+            %   number of training data
+            % - generator : handle function (default is @rand)
+            %   generator function such as `rand`, `randn`, ...
             
             % default generator
-            if nargin < 3
+            if ~exist('generator', 'var')
                 generator = @rand;
             end
             
@@ -865,6 +837,7 @@ classdef DagNNTrainer < handle
             end
             
             % - save
+            % todo: save with `-struct` option
             save(obj.props.data.db_filename, 'db');
             clear('db');
             
@@ -881,8 +854,8 @@ classdef DagNNTrainer < handle
         end
         
         function make_db_with_changed_y(obj)
-            % MAKE_DB_WITH_CHANGED_Y generated 'db.y' based on given 
-            % 'db.x' and 'params' file.
+            % Generate `db.y` based on given 
+            % `db.x` and `params` file
             
             % db filename
             db_filename = [...
@@ -890,7 +863,7 @@ classdef DagNNTrainer < handle
                 DagNNTrainer.format_spec.change_db_y ...
             ];
         
-            if exis(db_filename, 'file')
+            if exist(db_filename, 'file')
                 return
             end
             
@@ -907,7 +880,7 @@ classdef DagNNTrainer < handle
         end
         
         function make_noisy_params(obj, snr)
-            % MAKE_NOISY_PARAMS
+            % Makes noisy `params` with given signal to nooise ratio in dB
             %
             % Parameters
             % ----------
@@ -921,7 +894,7 @@ classdef DagNNTrainer < handle
                 sprintf(DagNNTrainer.format_spec.noisy_params, snr) ...
             ];
         
-            if exis(params_filename, 'file')
+            if exist(params_filename, 'file')
                 return
             end
             
@@ -930,8 +903,6 @@ classdef DagNNTrainer < handle
             
             % add white Gaussian noise to signal
             for field = fieldnames(params)
-                % x = params.(fields{i});
-                % params.(fields{i}) = x + sigma * randn(size(x));
                 params.(char(field)) = ...
                     awgn(params.(char(field)), snr, 'measured');
             end
@@ -945,8 +916,8 @@ classdef DagNNTrainer < handle
         end
         
         function run(obj)
-            % RUN runs the learing process contains 'forward', 'backward'
-            % and 'update' steps
+            % Run the learing process contains `forward`, `backward`
+            % and `update` steps
             
             % init net
             obj.init();
@@ -981,21 +952,23 @@ classdef DagNNTrainer < handle
                     input = ...
                         DagNNTrainer.cell_array_to_tensor(...
                         obj.data.train.x(indexes) ...
-                        );
+                    );
                     % - y
                     expected_output = ...
                         DagNNTrainer.cell_array_to_tensor(...
                         obj.data.train.y(indexes) ...
-                        );
+                    );
                     
                     % forward, backward step
                     obj.net.eval(...
                         {...
-                        obj.props.net.vars.input.name, input, ...
-                        obj.props.net.vars.expected_output.name, expected_output
+                            obj.props.net.vars.input.name, input, ...
+                            obj.props.net.vars.expected_output.name, expected_output
                         }, ...
-                        {obj.props.net.vars.cost.name, 1} ...
-                        );
+                        {...
+                            obj.props.net.vars.cost.name, 1 ...
+                        } ...
+                    );
                     
                     % update step
                     for param_index = 1:length(obj.net.params)
@@ -1009,7 +982,7 @@ classdef DagNNTrainer < handle
                 end
                 
                 % elapsed times
-                obj.elapsed_times(end + 1) = cputime() - begin_time();
+                obj.elapsed_times(end + 1) = cputime() - begin_time;
                 % costs
                 % - train
                 obj.costs.train(end + 1) = obj.get_train_cost();
@@ -1047,13 +1020,17 @@ classdef DagNNTrainer < handle
     
     methods (Static)
         function tensor = cell_array_to_tensor(cell_array)
-            % CELL_ARRAY_TO_TENSOR converts cell array to multi-dimensional
-            % array
+            % Convert cell array to multi-dimensional array
+            %
+            % Parameters
+            % ----------
+            % - cell_array: cell_array
+            %   Input cell array
             
             tensor_size = horzcat(...
                 size(cell_array{1}), ...
                 [1, length(cell_array)] ...
-                );
+            );
             
             indexes = cell(1, length(tensor_size));
             for i = 1:length(tensor_size)
@@ -1067,40 +1044,18 @@ classdef DagNNTrainer < handle
             end
         end
         
-        function print_dashline(length_of_line)
-            % PRINT_DASHLINE prints a dash-line
-            %
-            % Parameters
-            % ----------
-            % - length_of_line: int
-            %   length of printed dash-line
-            %
-            % Examples
-            % --------
-            % 1.
-            %   >>> DagNNTrainer.print_dashline(5)
-            %   -----
-            
-            if nargin < 1
-                length_of_line = 32;
-            end
-            
-            fprintf(repmat('-', 1, length_of_line));
-            fprintf('\n');
-        end
-        
         % todo: save diagraph
         function dg = make_digraph(filename)
-            % MAKE_DIGRAPH makes a directed-graph based on given 'json' file
+            % Make a directed-graph based on given `json` file
             %
             % Parameters
             % ----------
             % - filename : char vector
-            %   filename of input 'json' file
+            %   Filename of input `json` file
             %
             % Returns
             % - dg : digraph
-            %   directed graph
+            %   Directed graph
             %
             % Examples
             % --------
@@ -1148,12 +1103,12 @@ classdef DagNNTrainer < handle
         end
         
         function plot_digraph(filename)
-            % PLOT_DIGRAPH plot a directed-graph based on given 'json' file
+            % Plot a directed-graph based on given `json` file
             %
             % Parameters
             % ----------
             % - filename : char vector
-            %   filename of input 'json' file
+            %   Filename of input `json` file
             %
             % Examples
             % --------
@@ -1185,7 +1140,7 @@ classdef DagNNTrainer < handle
                 'Sources', props.net.vars.input.name, ...
                 'Sinks', props.net.vars.cost.name, ...
                 'AssignLayers', 'asap' ...
-                );
+            );
             
             % highlight
             % - input, output
@@ -1195,7 +1150,7 @@ classdef DagNNTrainer < handle
                     props.net.vars.expected_output.name ...
                 }, ...
                 'NodeColor', 'red' ...
-                );
+            );
             % - params
             params = {};
             for i = 1 : length(props.net.params)
@@ -1204,7 +1159,7 @@ classdef DagNNTrainer < handle
             highlight(h, ...
                 params, ...
                 'NodeColor', 'green' ...
-                );
+            );
             % - blocks
             ms = h.MarkerSize;
             blocks = {};
@@ -1220,27 +1175,26 @@ classdef DagNNTrainer < handle
                 blocks, ...
                 'Marker', 's', ...
                 'MarkerSize', 5 * ms ...
-                );
+            );
             % hide axes
             set(h.Parent, ...
                 'XTick', [], ...
                 'YTick', [] ...
-                );
-            
+            );
         end
         
         function obj = load(filename)
-            % LOAD loads 'DagNNTrainer' from file
+            % Load `DagNNTrainer` from file
             
             obj = load(filename);
             obj = obj.(char(fieldnames(obj)));
         end
         
         function test()
-            % setup 'matconvnet'
+            % setup `matconvnet`
             run('vl_setupnn.m');
             
-            % 'props' dir
+            % `props` dir
             props_dir = DagNNTrainer.props_dir;
             % properties filenames
             props_filenames = ...
