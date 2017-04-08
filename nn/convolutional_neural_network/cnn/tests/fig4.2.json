@@ -1,0 +1,122 @@
+{
+    "$schema": "https://raw.githubusercontent.com/nnategh/Retina/master/nn/convolutional_neural_network/cnn/dagnntrainer_schema.json",
+    "data": {
+        "db_filename": "D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/db.mat",
+        "params_filename": "D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/params.mat",
+        "bak_dir": "must_be_removed"
+    },
+    "net": {
+        "vars": {
+            "input": {
+                "name": "x",
+                "size": [
+                    70,
+                    1
+                ]
+            },
+            "output": {
+                "name": "G",
+                "size": [
+                    51,
+                    1
+                ]
+            },
+            "expected_output": {
+                "name": "y"
+            },
+            "cost": {
+                "name": "c"
+            }
+        },
+        "params": [
+            {
+                "name": "w_B",
+                "size": [
+                    20,
+                    1
+                ]
+            },
+            {
+                "name": "w_A",
+                "size": [
+                    20,
+                    1
+                ]
+            }
+        ],
+        "layers": [
+            {
+                "name": "B",
+                "type": "conv+norm+logsig",
+                "inputs": [
+                    "x"
+                ],
+                "outputs": [
+                    "B"
+                ],
+                "params": [
+                    [
+                        "w_B"
+                    ],
+                    [],
+                    []
+                ]
+            },
+            {
+                "name": "A",
+                "type": "conv+norm+tansig",
+                "inputs": [
+                    "x"
+                ],
+                "outputs": [
+                    "A"
+                ],
+                "params": [
+                    [
+                        "w_A"
+                    ],
+                    [],
+                    []
+                ]
+            },
+            {
+                "name": "BA",
+                "type": "sum",
+                "inputs": [
+                    "B",
+                    "A"
+                ],
+                "outputs": [
+                    "G"
+                ],
+                "params": null
+            },
+            {
+                "name": "cost",
+                "type": "quadcost",
+                "inputs": [
+                    "G",
+                    "y"
+                ],
+                "outputs": [
+                    "c"
+                ],
+                "params": null
+            }
+        ]
+    },
+    "learning": {
+        "train_val_test_ratios": [
+            0.70,
+            0.15,
+            0.15
+        ],
+        "standardize_x": false,
+        "standardize_y": false,
+        "learning_rate": 0.0001,
+        "batch_size": 10,
+        "number_of_epochs": 99,
+        "number_of_val_fails": 1000,
+        "device": "cpu"
+    }
+}
