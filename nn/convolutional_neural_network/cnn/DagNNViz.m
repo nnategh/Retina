@@ -1567,8 +1567,22 @@ classdef DagNNViz < handle
                 'OuterPosition', [0, 0, 1, 1] ...
             );
             
+        
+            % node labels
+            labels = {};
+            %   name(type) -> type
+            expression = '\w+\((?<type>\w+)\)';
+            for name = dg.Nodes.Name'
+                token_names = regexp(char(name), expression, 'names');
+                if isempty(token_names)
+                    labels{end + 1} = char(name);
+                else
+                    labels{end + 1} = token_names.type;
+                end
+            end
+            
             % plot graph
-            h = plot(dg);
+            h = plot(dg, 'NodeLabel', labels);
             
             % layout
             layout(h, 'layered', ...
@@ -1602,7 +1616,8 @@ classdef DagNNViz < handle
             for i = 1 : length(props.net.layers)
                 blocks{end + 1} = ...
                     sprintf(...
-                        '%s', ...
+                        '%s(%s)', ...
+                        props.net.layers(i).name, ...
                         props.net.layers(i).type ...
                     );
             end
@@ -1773,14 +1788,14 @@ classdef DagNNViz < handle
             
             % add layers to digraph
             dg = digraph();
+            names = {};
             
             for layer = props.net.layers'
-                block = sprintf('%s', layer.type);
+                block = sprintf('%s(%s)', layer.name, layer.type);
                 
                 % add edges
                 % - inputs, block
-                for i = 1 : length(layer.inputs)
-                    x = layer.inputs(i);
+                for x = layer.inputs'
                     dg = addedge(dg, x, block);
                 end
                 % - params, block
@@ -1790,13 +1805,11 @@ classdef DagNNViz < handle
                         layer.params = [layer.params{:}];
                     end
                 end
-                for i = 1 : length(layer.params)
-                    w = layer.params(i);
+                for w = layer.params'
                     dg = addedge(dg, w, block);
                 end
                 % - block, outputs
-                for i = 1 : length(layer.outputs)
-                    y = layer.outputs(i);
+                for y = layer.outputs'
                     dg = addedge(dg, block, y);
                 end
             end
