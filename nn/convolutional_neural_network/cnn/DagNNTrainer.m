@@ -301,9 +301,11 @@ classdef DagNNTrainer < handle
                         sub_param_index = obj.net.getParamIndex(param_name);
                         param_size = size(obj.net.params(sub_param_index).value);
                         
-                        obj.net.layers(layer_index).block.set_kernel_size(param_size);
-                        % todo: solve problem of `has_bias`
-                        % obj.net.layers(i).block.hasBias = DagNNTrainer.has_bias;
+                        obj.net.layers(layer_index).block.size = param_size;
+                        % obj.net.layers(layer_index).block.set_kernel_size(param_size);
+                        if length(obj.net.layers(layer_index).params) == 1
+                            obj.net.layers(layer_index).block.hasBias = false;
+                        end
                     end
                 end
                 
