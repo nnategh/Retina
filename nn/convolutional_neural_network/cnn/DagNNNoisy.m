@@ -260,4 +260,164 @@ classdef DagNNNoisy < handle
         end
     end
     
+    % RMSE
+    methods (Static)
+        function savePredictedOutput(propsFilename)
+            % Make predicted outputs and append the to the `db` as a `y_`
+            %
+            % Parameters
+            % ----------
+            % - propsFilename: char vector
+            %   Path of properties for defining dag
+            
+            % setup `matconvnet`
+            run('vl_setupnn.m');
+            
+            % construct and init a dag
+            cnn = DagNNTrainer(propsFilename);
+            cnn.init();
+            
+            % make predicted outputs
+            y_ = cnn.out(cnn.db.x);
+            
+            % append predicted outputs to the current `db`
+            save(cnn.props.data.db_filename, 'y_', '-append');
+        end
+        
+        function e = rmse(y, y_)
+            % Root-mean-square-error
+            %
+            % Parameters
+            % ----------
+            % - y: cell array of double vector
+            %   True output
+            % - y_: cell array of double vector
+            %   Expected output
+            %
+            % Returns
+            % -------
+            % - e: double vector
+            %   Error
+            
+            % number of samples
+            numberOfSamples = min(numel(y), numel(y_));
+            
+            e = zeros(numberOfSamples, 1);
+            for i = 1:numberOfSamples
+                e(i) = rms(y{i} - y_{i});
+            end
+        end
+        
+        function plotRMSE(e, n)
+            % Create a bar graph of root-mean-square-error and highlight
+            % n'th bin
+            %
+            % Parameters
+            % ----------
+            % - e: double vector
+            %   Error
+            % - n: int
+            %   No. of highlighted bin
+            
+            % number of bins
+            numberOfBins = numel(e);
+            % specified error
+            e_ = zeros(size(e));
+            e_(n) = e(n);
+            % maximum error
+            maxError = max(e);
+            % number of digits in `round` function
+            numberOfDigits = 2;
+            
+            % bar plot
+            hold('on');
+            bar(e);
+            bar(e_, 'FaceColor', 'red');
+            hold('off');
+            
+            set(...
+                gca, ...
+                'XTick', unique(round([n, numberOfBins], numberOfDigits)), ...
+                'YTick', unique(round([e(n), maxError], numberOfDigits)), ...
+                'YGrid', 'on' ...
+            );
+            axis('tight');
+            xlabel('Samples');
+            ylabel('RMSE');
+        end
+        
+        function plotTrueVsPredictedOutput(y, y_)
+            % Plot `true` vs `predicted` output
+            %
+            % Parameters
+            % ----------
+            % - y: double vector
+            %   True output
+            % - y_: double vector
+            %   Expected output
+            
+            % line width
+            lineWidth = 1.5;
+            % number of digits in `round` function
+            numberOfDigits = 3;
+            % number of points
+            numberOfPoints = max(numel(y), numel(y_));
+            % min and max value
+            minValue = min([y(:); y_(:)]);
+            maxValue = max([y(:); y_(:)]);
+            
+            % plot
+            hold('on');
+            plot(y, 'LineWidth', lineWidth);
+            plot(y_, '-.', 'LineWidth', lineWidth);
+            hold('off');
+            
+            xlabel('Index');
+            ylabel('Intensity');
+            
+            legend('True', 'Predicted');
+            
+            set(gca, ...
+                'XTick', numberOfPoints, ...
+                'YTick', unique(round([minValue, maxValue], numberOfDigits)), ...
+                'XGrid', 'on' ...
+            );
+            axis('tight');
+        end
+        
+        function plotOutputRMSE(y, y_, e, n)
+            % Sub-plots `plotRMSE` and `plotTrueVsPredictedOutput`
+            %
+            % Parameters
+            % ----------
+            % - y: double vector
+            %   True output
+            % - y_: double vector
+            %   Expected output
+            % - e: double vector
+            %   Error
+            % - n: int
+            %   No. of highlighted bin
+            
+            % figure
+            set(gcf, ...
+                'Name', 'True/Predicted Ouputs & RMSE', ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0, 0, 1, 1] ...
+            );
+        
+            % plot
+            % - parameters
+            rows = 2;
+            cols = 1;
+            % - output
+            subplot(rows, cols, 1);
+            DagNNNoisy.plotTrueVsPredictedOutput(y, y_);
+            % - rmse
+            subplot(rows, cols, 2);
+            DagNNNoisy.plotRMSE(e, n);
+        end
+    end
+    
 end
