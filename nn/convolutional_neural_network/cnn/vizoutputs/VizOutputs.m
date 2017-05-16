@@ -80,6 +80,7 @@ classdef VizOutputs < handle
             
             % first plot
             obj.plot(1);
+            h = gcf();
             
             % loop until input equls `'exit'`
             while true
@@ -100,8 +101,8 @@ classdef VizOutputs < handle
                     end
                 end
                 
-                % break if bins is empty
-                if isempty(bins)
+                % break if bins is empty or figure is closed
+                if isempty(bins) || ~isvalid(h)
                     break;
                 end
                 
@@ -118,6 +119,11 @@ classdef VizOutputs < handle
                     % pause
                     pause(delay);
                 end
+            end
+            
+            % close figure
+            if isvalid(h)
+                close(h);
             end
         end
         
@@ -277,22 +283,31 @@ classdef VizOutputs < handle
     
     % main
     methods (Static)
-        function main(dbFilename)
+        function main(dbFilename, interface)
             % Main
             %
             % Properties
             % ----------
             % - dbFilename: char vector
             %   Path of data-base file
+            % - interface: char vector (defualt = 'cli')
+            %   'cli' or 'gui'
+            
+            % default values
+            if ~exist('interface', 'var')
+                interface = 'cli';
+            end
             
             % construct `VizOutputs` object
             vizout = VizOutputs(dbFilename);
             
-            % cli
-            % vizout.cli();
-            
-            % gui
-            vizout.gui();
+            % run interface
+            switch interface
+                case 'cli'
+                    vizout.cli();
+                case 'gui'
+                    vizout.gui();
+            end
         end
     end
     
