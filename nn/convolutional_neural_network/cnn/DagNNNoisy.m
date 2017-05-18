@@ -262,6 +262,20 @@ classdef DagNNNoisy < handle
     
     % RMSE
     methods (Static)
+        function rmse(propsFilename)
+            % Helper method for calling another functions
+            %
+            % Parameters
+            % ----------
+            % - propsFilename: char vector
+            %   Path of properties for defining dag
+            
+            % save `y_`
+            DagNNNoisy.savePredictedOutput(propsFilename);
+            % save `indexes`
+            DagNNNoisy.saveDBIndexes(propsFilename);
+        end
+        
         function savePredictedOutput(propsFilename)
             % Make predicted outputs and append the to the `db` as a `y_`
             %
@@ -276,6 +290,7 @@ classdef DagNNNoisy < handle
             % construct and init a dag
             cnn = DagNNTrainer(propsFilename);
             cnn.init();
+            cnn.load_best_val_epoch();
             
             % make predicted outputs
             y_ = cnn.out(cnn.db.x);
