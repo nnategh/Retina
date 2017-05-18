@@ -17,6 +17,12 @@ classdef DagNNTrainer < handle
         %           'test', struct('x', cell array, 'y', cell array) ...
         %         )
         %   Contains 'train', 'val' and 'test' data
+        % - dbIndexes: struct(...
+        %           'train', int vector, ...
+        %           'val', int vector, ...
+        %           'test', int vector ...
+        %         )
+        %   Contains 'train', 'val' and 'test' indexes
         % - costs: stuct(...
         %           'train', double array, ...
         %           'val', double array, ...
@@ -31,6 +37,7 @@ classdef DagNNTrainer < handle
         current_epoch
         net
         data
+        dbIndexes
         costs
         elapsed_times
     end
@@ -343,22 +350,25 @@ classdef DagNNTrainer < handle
             
             % data
             % - train
+            obj.dbIndexes.train = sort(indexes(1:end_index.train));
             %   - x
-            obj.data.train.x = obj.db.x(indexes(1:end_index.train));
+            obj.data.train.x = obj.db.x(obj.dbIndexes.train);
             %   - y
-            obj.data.train.y = obj.db.y(indexes(1:end_index.train));
+            obj.data.train.y = obj.db.y(obj.dbIndexes.train);
             
             % - val
+            obj.dbIndexes.val = sort(indexes(end_index.train + 1:end_index.val));
             %   - x
-            obj.data.val.x = obj.db.x(indexes(end_index.train + 1:end_index.val));
+            obj.data.val.x = obj.db.x(obj.dbIndexes.val);
             %   - y
-            obj.data.val.y = obj.db.y(indexes(end_index.train + 1:end_index.val));
+            obj.data.val.y = obj.db.y(obj.dbIndexes.val);
             
             % - test
+            obj.dbIndexes.test = sort(indexes(end_index.val + 1:end_index.test));
             %   - x
-            obj.data.test.x = obj.db.x(indexes(end_index.val + 1:end_index.test));
+            obj.data.test.x = obj.db.x(obj.dbIndexes.test);
             %   - y
-            obj.data.test.y = obj.db.y(indexes(end_index.val + 1:end_index.test));
+            obj.data.test.y = obj.db.y(obj.dbIndexes.test);
         end
         
         function init_params(obj)
@@ -366,6 +376,8 @@ classdef DagNNTrainer < handle
             
             params = obj.props.net.params;
             weights = load(obj.props.data.params_filename);
+%             disp('Must be changed');
+%             weights.w_G = randn(10, 1);
             for i = 1:length(params)
                 obj.net.params(obj.net.getParamIndex(params(i).name)).value = ...
                     DataUtils.resize(weights.(params(i).name), params(i).size);
