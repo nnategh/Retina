@@ -10,9 +10,20 @@ classdef VizOutputs < handle
         %   Expected outputs
         % - e: double vector
         %   Root-Mean-Square-Error between `y` and `y_`
+        % - indexes: struct(...
+        %           'train', int vector, ...
+        %           'val', int vector, ...
+        %           'test', int vector ...
+        %         )
+        %   Contains `train`, `val` and `test` indexes
+        % - figRMSE: Figure
+        %   Handle of `RMSE` figure
+        
         y
         y_
         e
+        indexes
+        figRMSE
     end
     
     methods
@@ -26,10 +37,11 @@ classdef VizOutputs < handle
             
             % load `db`
             db = load(dbFilename);
-            % `y`, `y_` & `e`
+            % `y`, `y_`, `e` and `indexes`
             obj.y = db.y;
             obj.y_ = db.y_;
             obj.e = VizOutputs.rmse(obj.y, obj.y_);
+            obj.indexes = db.indexes;
         end
         
         function gui(obj)
@@ -82,13 +94,20 @@ classdef VizOutputs < handle
             obj.plot(1);
             h = gcf();
             
+            % print help
+            VizOutputs.printHelp();
+            
             % loop until input equls `'exit'`
             while true
                 % get number of bins
                 bins = input(prompt);
                 
+                % if `isSequence` is true then is shown frame by frame
+                isSequence = true;
+                
                 % if input is string command
                 if ischar(bins)
+                    isSequence = false;
                     switch bins
                         case 'min' % bins with minimum errors
                             bins = find(obj.e == minError);
@@ -96,6 +115,12 @@ classdef VizOutputs < handle
                             bins = find(obj.e == maxError);
                         case 'end' % last bin
                             bins = numberOfBins;
+                        case 'train' % training data
+                            bins = obj.indexes.train;
+                        case 'val' % validation data
+                            bins = obj.indexes.val;
+                        case 'test' % test data
+                            bins = obj.indexes.test;
                         otherwise
                             bins = [];
                     end
@@ -106,18 +131,24 @@ classdef VizOutputs < handle
                     break;
                 end
                 
-                % plot for each bin number
-                for bin = bins
-                    % double to integer
-                    refinedBin = floor(bin);
-                    % minimum bin number is `1`
-                    refinedBin = max(1, refinedBin);
-                    % maximum bin number is `number of bins`
-                    refinedBin = min(numberOfBins, refinedBin);
-                    % plot
-                    obj.plot(refinedBin);
-                    % pause
-                    pause(delay);
+                % refine bins
+                % - double to integer
+                bins = floor(bins);
+                % - minimum bin number is `1`
+                bins = max(1, bins);
+                % maximum bin number is `number of bins`
+                bins = min(numberOfBins, bins);
+                
+                if isSequence
+                    % plot for each bin number
+                    for bin = bins
+                        % plot
+                        obj.plot(bin);
+                        % pause
+                        pause(delay);
+                    end
+                else
+                    obj.plot(bins)
                 end
             end
             
@@ -127,20 +158,81 @@ classdef VizOutputs < handle
             end
         end
         
-        function plot(obj, binNumber)
+        function plot(obj, bins)
             % Helper method for `plotOutputRMSE` static function
             %
             % Parameters
             % ----------
-            % - binNumber: int
-            %   No. of bin in bar plot of rmse
+            % - bins: int vectr
+            %   Indexes of bins in bar plot of rmse
 
+            % rmse figure
+            if isempty(obj.figRMSE)
+                obj.figRMSE = figure();
+            end
+            
+            % index of bins with maximum error
+            index = obj.getBinWithMaxError(bins);
+            
             VizOutputs.plotOutputRMSE(...
-                obj.y{binNumber}, ...
-                obj.y_{binNumber}, ...
+                obj.y{index}, ...
+                obj.y_{index}, ...
                 obj.e, ...
-                binNumber ...
+                bins, ...
+                index, ...
+                obj.figRMSE ...
             );
+        end
+        
+        function printRMSETable(obj)
+            % Print RMES table
+            %
+            
+            numberOfDigits = 3;
+            
+            items = {...
+                'All', ...
+                'Train', ...
+                'Val', ...
+                'Test' ...
+            };
+            meanValues = round([
+                mean(obj.e)
+                mean(obj.e(obj.indexes.train))
+                mean(obj.e(obj.indexes.val))
+                mean(obj.e(obj.indexes.test))
+            ], numberOfDigits);
+            stdValues = round([
+                std(obj.e)
+                std(obj.e(obj.indexes.train))
+                std(obj.e(obj.indexes.val))
+                std(obj.e(obj.indexes.test))
+            ], numberOfDigits);
+            numbers = [
+                numel(obj.e)
+                numel(obj.indexes.train)
+                numel(obj.indexes.val)
+                numel(obj.indexes.test)
+            ];
+            rmseTable = table(...
+                meanValues, stdValues, numbers, ...
+                'RowNames', items, ...
+                'VariableNames', {'mean', 'std', 'numel'} ...
+            );
+            disp('Root-Mean-Square-Error:');
+            disp(rmseTable);
+        end
+        
+        function index = getBinWithMaxError(obj, bins)
+            % Get index of bin in specified bins with maximum error
+            %
+            % Parameters
+            % ----------
+            % - bins: int vector
+            %   Indexes of highlighted bins
+            
+            [~, index] = max(obj.e(bins));
+            index = bins(index);
         end
     end
     
@@ -169,7 +261,7 @@ classdef VizOutputs < handle
             end
         end
         
-        function plotRMSE(e, n)
+        function plotRMSE(e, bins, index)
             % Create a bar graph of root-mean-square-error and highlight
             % n'th bin
             %
@@ -177,16 +269,20 @@ classdef VizOutputs < handle
             % ----------
             % - e: double vector
             %   Error
-            % - n: int
-            %   No. of highlighted bin
+            % - bins: int vector
+            %   Indexes of highlighted bins
+            % - index: int
+            %   Index of bins with maximum error
             
             % number of bins
             numberOfBins = numel(e);
             % specified error
             e_ = zeros(size(e));
-            e_(n) = e(n);
+            e_(bins) = e(bins);
+            
             % maximum error
             maxError = max(e);
+            minError = min(e);
             % number of digits in `round` function
             numberOfDigits = 2;
             
@@ -198,8 +294,8 @@ classdef VizOutputs < handle
             
             set(...
                 gca, ...
-                'XTick', unique(round([n, numberOfBins], numberOfDigits)), ...
-                'YTick', unique(round([e(n), maxError], numberOfDigits)), ...
+                'XTick', unique(round([index, numberOfBins], numberOfDigits)), ...
+                'YTick', unique(round([minError, e(index), maxError], numberOfDigits)), ...
                 'YGrid', 'on' ...
             );
             axis('tight');
@@ -246,7 +342,7 @@ classdef VizOutputs < handle
             axis('tight');
         end
         
-        function plotOutputRMSE(y, y_, e, n)
+        function plotOutputRMSE(y, y_, e, bins, index, fig)
             % Sub-plots `plotRMSE` and `plotTrueVsPredictedOutput`
             %
             % Parameters
@@ -257,17 +353,27 @@ classdef VizOutputs < handle
             %   Expected output
             % - e: double vector
             %   Error
-            % - n: int
-            %   No. of highlighted bin
+            % - bins: int vector
+            %   Indexes of highlighted bins
+            % - index: int
+            %   Index of bins with maximum error
+            % - fig: Figure
+            %   Figure handle
+            
+            % default values
+            if ~exist('fig', 'var')
+                fig = gcf();
+            end
             
             % figure
-            set(gcf, ...
+            figure(fig);
+            set(fig, ...
                 'Name', 'True/Predicted Ouputs & RMSE', ...
                 'NumberTitle', 'off', ...
                 'Units', 'normalized', ...
                 'OuterPosition', [0, 0, 1, 1] ...
             );
-        
+
             % plot
             % - parameters
             rows = 2;
@@ -277,7 +383,40 @@ classdef VizOutputs < handle
             VizOutputs.plotTrueVsPredictedOutput(y, y_);
             % - rmse
             subplot(rows, cols, 2);
-            VizOutputs.plotRMSE(e, n);
+            VizOutputs.plotRMSE(e, bins, index);
+        end
+        
+        function printHelp()
+            % Print valid commands in `cli` interface
+            
+            fprintf('Valid Commands:\n');
+            fprintf('\tIndex scalar such as 1, 2, …\n');
+            fprintf('\tIndex vector such as [1, 2], 10:20, …\n');
+            fprintf('\t''min''\tIndexes with minimum error\n');
+            fprintf('\t''max''\tIndexes with maximum error\n');
+            fprintf('\t''train''\tIndexes of training data-set\n');
+            fprintf('\t''val''\tIndexes of validation data-set\n');
+            fprintf('\t''test''\tIndexes of test data-set\n');
+            fprintf('\t''end''\tLast index\n');
+            fprintf('\t''exit''\tExit the program\n\n');
+        end
+        
+        function h = figure(name)
+            % Create `full screen` figure
+            %
+            % Parameters
+            % ----------
+            % - name: char vector
+            %   Name of figure
+            %
+            % Return
+            % - h: matlab.ui.Figure
+            h = figure(...
+                'Name', name, ...
+                'NumberTitle', 'off', ...
+                'Units', 'normalized', ...
+                'OuterPosition', [0, 0, 1, 1] ...
+            );
         end
     end
     
@@ -298,14 +437,32 @@ classdef VizOutputs < handle
                 interface = 'cli';
             end
             
+            % show images of `net` and `error`
+            [~, filename, ~] = fileparts(dbFilename);
+
+            % - net
+            VizOutputs.figure('Net');
+            %   - `net` is transparent image!
+            [I, ~, alpha] = imread(fullfile('./nets', [filename '.png']));
+            f = imshow(I);
+            set(f, 'AlphaData', alpha);
+
+            % - error
+            VizOutputs.figure('Error');
+            imshow(fullfile('./errors', [filename '.png']));
+            
             % construct `VizOutputs` object
             vizout = VizOutputs(dbFilename);
             
+            % print rmse table
+            clc();
+            vizout.printRMSETable();
+            
             % run interface
             switch interface
-                case 'cli'
+                case 'cli' % command line interface
                     vizout.cli();
-                case 'gui'
+                case 'gui' % graphical user interface
                     vizout.gui();
             end
         end
