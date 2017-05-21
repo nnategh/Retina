@@ -1,6 +1,21 @@
 classdef VizOutputs < handle
     %Visualize `true` and `predicted` outputs with `rmse` errors
     
+    properties (Constant)
+        % Properties
+        % ----------
+        % - dataDir: char vector
+        %   Path of `data` directory
+        % - errorsDir: char vector
+        %   Path of `errors` directory
+        % - netsDir: char vector
+        %   Path of `nets` directory
+
+        dataDir = './data';
+        errorsDir = './errors';
+        netsDir = './nets';
+    end
+    
     properties
         % Properties
         % ----------
@@ -418,6 +433,87 @@ classdef VizOutputs < handle
                 'OuterPosition', [0, 0, 1, 1] ...
             );
         end
+        
+        function st = getSummaryTable()
+            % Get summary table
+            % Columns of table are `Model`, `All`, `Train`, `Val`, `Test`
+            %
+            % Returns
+            % -------
+            % - st: table
+            %   Summary table of errors
+            
+            % number of digits in round process
+            numOfDigits = 3;
+            
+            % get data
+            filenames = dir(fullfile(VizOutputs.dataDir, '*.mat'));
+            numOfData = numel(filenames);
+            
+            % column names
+            colNames = {'Model', 'All', 'Train', 'Val', 'Test'};
+            
+            % models
+            models = cell(numOfData, 1);
+            for i = 1:numOfData
+                [~, models{i}, ~] = fileparts(filenames(i).name);
+            end
+            
+            % rmse (all, train, val & test)
+            all = zeros(numOfData, 1);
+            train = zeros(numOfData, 1);
+            val = zeros(numOfData, 1);
+            test = zeros(numOfData, 1);
+            
+            for i = 1:numOfData
+                vizout = VizOutputs(fullfile(...
+                    VizOutputs.dataDir, ...
+                    filenames(i).name)...
+                );
+                all(i) = mean(vizout.e);
+                train(i) = mean(vizout.e(vizout.indexes.train));
+                val(i) = mean(vizout.e(vizout.indexes.val));
+                test(i) = mean(vizout.e(vizout.indexes.test));
+            end
+            
+            % round
+            all = round(all, numOfDigits);
+            train = round(train, numOfDigits);
+            val = round(val, numOfDigits);
+            test = round(test, numOfDigits);
+            
+            % summary table
+            st = table(...
+                models, all, train, val, test, ...
+                'VariableNames', colNames ...
+            );
+        end
+        
+        function ut = getUITable()
+            % Get uitable
+            %
+            % Returns
+            % -------
+            % - st: table
+            %   uitable of errors
+            
+            t = VizOutputs.getSummaryTable();
+            data = [...
+                t.Model, ...
+                num2cell(t.All), ...
+                num2cell(t.Train), ...
+                num2cell(t.Val), ...
+                num2cell(t.Test) ...
+            ];
+            
+            ut = uitable(...
+                'Data', data, ...
+                'ColumnName', t.Properties.VariableNames, ...
+                'Units', 'Normalized', ...
+                'Position', [0, 0, 1, 1] ...
+            );
+            
+        end
     end
     
     % main
@@ -442,10 +538,7 @@ classdef VizOutputs < handle
 
             % - net
             VizOutputs.figure('Net');
-            %   - `net` is transparent image!
-            [I, ~, alpha] = imread(fullfile('./nets', [filename '.png']));
-            f = imshow(I);
-            set(f, 'AlphaData', alpha);
+            imshow(fullfile('./nets', [filename '.png']));
 
             % - error
             VizOutputs.figure('Error');
