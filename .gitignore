@@ -19,3 +19,6 @@ octave-workspace
 
 # '.mat' files
 *.mat
+
+# matconvnet
+matconvnet/
