@@ -23,7 +23,7 @@ classdef DagNNViz < handle
         bak_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11\fig4.2\bak_200_0.0001';
         data_dir = 'E:\Documents\University\3. PhD\MSU\Neda\codes\Retina\nn\convolutional_neural_network\cnn\data\ep20c11';
         output_dir = '';
-        formattype = 'svg';
+        formattype = 'png';
         showtitle = true;
         round_digits = 3;
     end
