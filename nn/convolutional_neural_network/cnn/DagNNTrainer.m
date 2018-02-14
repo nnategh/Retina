@@ -1,6 +1,5 @@
 classdef DagNNTrainer < handle
     %Trainer for DagNN
-    
     properties
         % - props: struct base on `dagnntrainer_schema.json`
         %   Properties of cnn contains configuration of 'data', 'net'
@@ -59,11 +58,13 @@ classdef DagNNTrainer < handle
         );
         blocks = struct(...
             'conv', @dagnn.Conv, ...
-            'norm', @dagnn.NormOverall, ...
+            'norm', @dagnn.BatchNorm2, ... % @dagnn.NormOverall
             'relu', @dagnn.ReLU, ...
             'logsig', @dagnn.Sigmoid, ...
             'tansig', @dagnn.TanSigmoid, ...
+            'neg', @dagnn.Neg, ... 
             'minus', @dagnn.Minus, ...
+            'times', @dagnn.Times, ...
             'sum', @dagnn.Sum, ...
             'quadcost', @dagnn.PDist ...
         );
@@ -157,24 +158,33 @@ classdef DagNNTrainer < handle
             % - x
             if obj.props.learning.standardize_x
                 for i = 1 : length(obj.db.x)
-                    mu = mean(obj.db.x{i}(:));
-                    sigma = std(obj.db.x{i}(:));
-                    if sigma == 0
-                        sigma = 1;
-                    end
-                    obj.db.x{i} = (obj.db.x{i} - mu) / sigma;
+                    obj.db.x{i} = normalize(obj.db.x{i});
                 end
             end
             % - y
             if obj.props.learning.standardize_y
                 for i = 1 : length(obj.db.y)
-                    mu = mean(obj.db.y{i}(:));
-                    sigma = std(obj.db.y{i}(:));
-                    if sigma == 0
-                        sigma = 1;
-                    end
-                    obj.db.y{i} = (obj.db.y{i} - mu) / sigma;
+                    obj.db.y{i} = normalize(obj.db.y{i});
                 end
+            end
+            
+            % Local functions
+            function x = normalize(x, eps)
+                % Normalize vector `x` (zero mean, unit variance)
+
+                % default values
+                if (~exist('eps', 'var'))
+                    eps = 1e-6;
+                end
+
+                mu = mean(x(:));
+
+                sigma = std(x(:));
+                if sigma < eps
+                    sigma = 1;
+                end
+
+                x = (x - mu) ./ sigma;
             end
         end
         
@@ -240,7 +250,7 @@ classdef DagNNTrainer < handle
                     
                     if number_of_sub_types == 1
                         obj.net.addLayer(...
-                            layer.name, DagNNTrainer.blocks.(layer.type)(), ...
+                            layer.name, DagNNTrainer.blocks.(layer.type)(), ... %todo why we must use `()` at the end of this line?! and is there any better way to do that?
                             layer.inputs, ...
                             layer.outputs, ...
                             layer.params ...
@@ -327,6 +337,7 @@ classdef DagNNTrainer < handle
             n = min(length(obj.db.x), length(obj.db.y));
             
             % ratios
+            % todo: must normalize ratios -> ratio/sum_of_rations
             % - train
             ratios.train = obj.props.learning.train_val_test_ratios(1);
             % - test
@@ -379,8 +390,12 @@ classdef DagNNTrainer < handle
 %             disp('Must be changed');
 %             weights.w_G = randn(10, 1);
             for i = 1:length(params)
-                obj.net.params(obj.net.getParamIndex(params(i).name)).value = ...
-                    DataUtils.resize(weights.(params(i).name), params(i).size);
+                name = params(i).name;
+                size = params(i).size;
+                index = obj.net.getParamIndex(name);
+                
+                obj.net.params(index).value = ...
+                    DataUtils.resize(weights.(name), size);
             end
         end
         

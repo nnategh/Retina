@@ -3,17 +3,21 @@ classdef DagNNNoisy < handle
     
     properties
         % Properties
-        % -------------------
+        % ----------
         % - base_props_dir: char vector
         %   Path of directory containing `base_props` json files
-        % - indexhtml_path: char vector
+        % - index_html_path: char vector
         %   Path of `index.html` file
-        % - snr: double array
-        %   Each item is signal to noise ratio in dB
+        % - snr: double array (row vector)
+        %   Each item is signal to noise ratio in dB.
 
-        base_props_dir = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/base_props';
-        indexhtml_path = 'D:/PhD/MSU/codes/Retina/nn/convolutional_neural_network/cnn/data/ep20c11/noisy/index.html';
-        snr = [-1];
+        base_props_dir = './data/ep20c11/noisy/base_props';
+        index_html_path = './data/ep20c11/noisy/index.html';
+        snr = [-10];
+    end
+    
+    properties (Constant)
+        FILENAME_PATTERN = 'snr_%g_bs_%g_lr_%g';
     end
     
     methods
@@ -22,7 +26,7 @@ classdef DagNNNoisy < handle
             %
             % Returns
             % -------
-            % - full_filenames: cell array of char vectors
+            % - filenames: cell array of char vectors
             %   `folder` + `name` of each `base properties` file
             
             listing = ...
@@ -66,7 +70,7 @@ classdef DagNNNoisy < handle
                     props = jsondecode(fileread(base_props_filename));
                     params_filename = fullfile(...
                         root_dir, ...
-                        sprintf('params_snr_%d.mat', snr_value) ...
+                        sprintf('params_snr_%g.mat', snr_value) ...
                     );
                     DagNNNoisy.make_params(...
                         base_props_filename, ...
@@ -78,7 +82,7 @@ classdef DagNNNoisy < handle
                     props_filename = fullfile(...
                         root_dir, ...
                         sprintf(...
-                            'props_snr_%d_bs_%d_lr_%0.4f.json', ...
+                            ['props_' DagNNNoisy.FILENAME_PATTERN '.json'], ...
                             snr_value, ...
                             props.learning.batch_size, ...
                             props.learning.learning_rate ...
@@ -87,7 +91,7 @@ classdef DagNNNoisy < handle
                     bak_dir = fullfile(...
                         root_dir, ...
                         sprintf(...
-                            'bak_snr_%d_bs_%d_lr_%0.4f', ...
+                            ['bak_' DagNNNoisy.FILENAME_PATTERN], ...
                             snr_value, ...
                             props.learning.batch_size, ...
                             props.learning.learning_rate ...
@@ -116,13 +120,14 @@ classdef DagNNNoisy < handle
                 
                     % copy index.html
                     copyfile(...
-                        obj.indexhtml_path, ...
+                        obj.index_html_path, ...
                         bak_dir ...
                     );
                 
                     % plot noisy/noiseless filters
                     viz.output_dir = fullfile(bak_dir, 'images');
                     viz.plot_noisy_params(...
+                        props_filename, ...
                         props.data.params_filename, ...
                         params_filename, ...
                         snr_value ...
@@ -144,6 +149,10 @@ classdef DagNNNoisy < handle
             % - db_filename: char vector
             %   Path of output database
             
+            if exist(db_filename, 'file')
+                return;
+            end
+            
             cnn = DagNNTrainer(props_filename);
             cnn.init();
 
@@ -156,7 +165,6 @@ classdef DagNNNoisy < handle
                 db_filename, ...
                 '-struct', 'db' ...
             );
-            clear('db');
         end
         
         function make_params(props_filename, params_filename, snr)
@@ -170,6 +178,10 @@ classdef DagNNNoisy < handle
             %   Path of output dag parameters file
             % - snr: double
             %   Signal to noise ratio in dB
+            
+            if exist(params_filename, 'file')
+                return;
+            end
             
             % net
             cnn = DagNNTrainer(props_filename);
@@ -215,6 +227,10 @@ classdef DagNNNoisy < handle
             % - props_filename: char vector
             %   Path of output properties file
             
+            if exist(props_filename, 'file')
+                return;
+            end
+            
             % json
             % - decode
             props = jsondecode(fileread(base_props_filename));
@@ -251,8 +267,6 @@ classdef DagNNNoisy < handle
             close('all');
             clear;
             clc;
-            
-            run('vl_setupnn.m');
             
             % parameters
             noisy = DagNNNoisy();

@@ -96,7 +96,7 @@ classdef VizOutputs < handle
             
             % parameters
             % - prompt text
-            prompt = 'bin:   ';
+            prompt = '>>>   ';
             % - delay in seconds
             delay = 0.5;
             
@@ -314,7 +314,7 @@ classdef VizOutputs < handle
                 'YGrid', 'on' ...
             );
             axis('tight');
-            xlabel('Samples');
+            xlabel('Sample');
             ylabel('RMSE');
         end
         
@@ -512,7 +512,44 @@ classdef VizOutputs < handle
                 'Units', 'Normalized', ...
                 'Position', [0, 0, 1, 1] ...
             );
+        end
+        
+        function bar(ax)
+            % Create a bar graph of `rmse` errors
             
+            % default values
+            if ~exist('ax', 'var')
+                ax = gca();
+            end
+            
+            % data
+            t = VizOutputs.getSummaryTable();
+            data = [t.All, t.Train, t.Val, t.Test];
+            
+            % plot
+            % number of digits in `round` function
+            numOfDigits = 3;
+            % - bar
+            b = bar(ax, data);
+            % - colors
+            b(1).FaceColor = 'yellow';
+            b(2).FaceColor = 'blue';
+            b(3).FaceColor = 'green';
+            b(4).FaceColor = 'red';
+            % - labels
+            xlabel(ax, 'Model');
+            ylabel(ax, 'RMSE');
+            % - axes
+            set(ax, ...
+                'XTickLabel', t.Model, ...
+                'TickLabelInterpreter', 'none', ...
+                'XGrid', 'off', ...
+                'YTick', round(max(data(:)), numOfDigits), ...
+                'YGrid', 'on' ...
+            );
+            
+            % - legend
+            legend(ax, 'All', 'Train', 'Val', 'Test');
         end
     end
     

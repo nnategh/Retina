@@ -16,7 +16,7 @@
 1. github
     1. private
     1. ignore list
-1. Hassan-System for run
+1. Hassan's System for run
 ---
 PLOT
 ====
